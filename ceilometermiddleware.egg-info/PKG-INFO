@@ -1,0 +1,38 @@
+Metadata-Version: 1.1
+Name: ceilometermiddleware
+Version: 0.0.0.post1
+Summary: OpenStack Telemetry middleware for generating metrics
+Home-page: http://www.openstack.org/
+Author: OpenStack
+Author-email: openstack-dev@lists.openstack.org
+License: UNKNOWN
+Description: ===============================
+        ceilometermiddleware
+        ===============================
+        
+        OpenStack Telemetry middleware for generating metrics
+        
+        * Free software: Apache license
+        * Documentation: http://docs.openstack.org/developer/ceilometermiddleware
+        * Source: http://git.openstack.org/cgit/openstack/ceilometermiddleware
+        * Bugs: http://bugs.launchpad.net/ceilometer
+        
+        Features
+        --------
+        
+        * TODO
+        
+        
+Platform: UNKNOWN
+Classifier: Environment :: OpenStack
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
