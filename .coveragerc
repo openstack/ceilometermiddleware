@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = ceilometermiddleware
+omit = ceilometermiddleware/tests/*
+
+[report]
+ignore-errors = True
