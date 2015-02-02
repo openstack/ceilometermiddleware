@@ -150,7 +150,7 @@ class Swift(object):
             if header.startswith('HTTP_') and env[header]:
                 key = header[5:]
                 if isinstance(env[header], six.text_type):
-                    headers[key] = env[header].encode('utf-8')
+                    headers[key] = six.text_type(env[header])
                 else:
                     headers[key] = str(env[header])
 

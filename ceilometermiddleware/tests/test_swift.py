@@ -54,7 +54,7 @@ class FakeRequest(object):
         if 'wsgi.input' not in environ:
             environ['wsgi.input'] = six.moves.cStringIO('')
 
-        for header, value in headers.iteritems():
+        for header, value in six.iteritems(headers):
             environ['HTTP_%s' % header.upper()] = value
         self.environ = environ
 
@@ -248,7 +248,7 @@ class TestSwift(tests_base.TestCase):
             http_headers = [k for k in metadata.keys()
                             if k.startswith('http_header_')]
             self.assertEqual(1, len(http_headers))
-            self.assertEqual(uni.encode('utf-8'),
+            self.assertEqual(six.text_type(uni),
                              metadata['http_header_unicode'])
 
     def test_metadata_headers_on_not_existing_header(self):
