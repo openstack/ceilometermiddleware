@@ -22,11 +22,19 @@ In /etc/swift/proxy-server.conf on the main pipeline add "ceilometer" just
 before "proxy-server" and add the following filter in the file:
 .. code-block:: python
     [filter:ceilometer]
-    paste.filter_factory = ceilometermiddleware.swift:R
+    paste.filter_factory = ceilometermiddleware.swift:filter_factory
     # Some optional configuration this allow to publish additional metadata
     metadata_headers = X-TEST
     # Set reseller prefix (defaults to "AUTH_" if not set)
     reseller_prefix = AUTH_
+    # Set control_exchange to publish to.
+    control_exchange = swift
+    # Set transport url
+    transport_url = rabbit://me:passwd@host:5672/virtual_host
+    # set messaging driver
+    driver = messaging
+    # set topic
+    topic = notifications
 """
 import functools
 import logging
@@ -92,9 +100,13 @@ class Swift(object):
     def __init__(self, app, conf):
         self._app = app
 
+        oslo.messaging.set_transport_defaults(conf.get('control_exchange',
+                                                       'swift'))
         self._notifier = oslo.messaging.Notifier(
-            oslo.messaging.get_transport(cfg.CONF),
-            publisher_id='ceilometermiddleware')
+            oslo.messaging.get_transport(cfg.CONF, url=conf.get('url')),
+            publisher_id='ceilometermiddleware',
+            driver=conf.get('driver', 'messaging'),
+            topic=conf.get('topic', 'notifications'))
 
         self.metadata_headers = [h.strip().replace('-', '_').lower()
                                  for h in conf.get(
