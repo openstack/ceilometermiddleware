@@ -1,15 +1,20 @@
-===============================
-ceilometermiddleware
-===============================
+===============================================
+Middleware for OpenStack Telemetry (Ceilometer)
+===============================================
 
-OpenStack Telemetry middleware for generating metrics
+This library provides middleware modules designed to enable metric and event
+data generation to be consumed by Ceilometer.
 
-* Free software: Apache license
-* Documentation: http://docs.openstack.org/developer/ceilometermiddleware
-* Source: http://git.openstack.org/cgit/openstack/ceilometermiddleware
-* Bugs: http://bugs.launchpad.net/ceilometer
+The source is available on GitHub at:
 
-Features
---------
+    http://github.com/openstack/ceilometermiddleware
 
-* TODO
+Bugs and feature requests are tracked on Launchpad at:
+
+    https://bugs.launchpad.net/ceilometermiddleware
+
+For any other information, refer to the parent project, Ceilometer:
+
+    https://github.com/openstack/ceilometer
+
+For information on contributing, see ``CONTRIBUTING.rst``.
