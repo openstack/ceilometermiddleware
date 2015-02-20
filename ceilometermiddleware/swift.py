@@ -44,6 +44,7 @@ from oslo_config import cfg
 from oslo_context import context
 from oslo_utils import timeutils
 from pycadf import event as cadf_event
+from pycadf.helper import api
 from pycadf import measurement as cadf_measurement
 from pycadf import metric as cadf_metric
 from pycadf import resource as cadf_resource
@@ -209,6 +210,7 @@ class Swift(object):
 
         # build notification body
         event = cadf_event.Event(eventTime=now, outcome=outcome,
+                                 action=api.convert_req_action(method),
                                  initiator=initiator, target=target,
                                  observer=cadf_resource.Resource(id='target'))
 
