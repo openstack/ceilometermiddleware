@@ -39,9 +39,9 @@ before "proxy-server" and add the following filter in the file:
 import functools
 import logging
 
-import oslo.messaging
 from oslo_config import cfg
 from oslo_context import context
+import oslo_messaging
 from oslo_utils import timeutils
 from pycadf import event as cadf_event
 from pycadf.helper import api
@@ -101,10 +101,10 @@ class Swift(object):
     def __init__(self, app, conf):
         self._app = app
 
-        oslo.messaging.set_transport_defaults(conf.get('control_exchange',
+        oslo_messaging.set_transport_defaults(conf.get('control_exchange',
                                                        'swift'))
-        self._notifier = oslo.messaging.Notifier(
-            oslo.messaging.get_transport(cfg.CONF, url=conf.get('url')),
+        self._notifier = oslo_messaging.Notifier(
+            oslo_messaging.get_transport(cfg.CONF, url=conf.get('url')),
             publisher_id='ceilometermiddleware',
             driver=conf.get('driver', 'messaging'),
             topic=conf.get('topic', 'notifications'))
