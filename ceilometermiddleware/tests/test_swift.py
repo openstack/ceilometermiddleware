@@ -355,3 +355,13 @@ class TestSwift(tests_base.TestCase):
             with mock.patch('oslo.messaging.Notifier.info') as notify:
                 list(app(req.environ, self.start_response))
                 self.assertEqual(calls, len(notify.call_args_list))
+
+    def test_empty_reseller_prefix(self):
+        app = swift.Swift(
+            FakeApp(), {'reseller_prefix': 'CUSTOM'})
+        req = FakeRequest('/1.0/CUSTOM/container/obj',
+                          environ={'REQUEST_METHOD': 'GET'})
+        with mock.patch('oslo.messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            data = notify.call_args_list[0][0]
+            self.assertIsNot(0, len(data[2]['target']['id']))
