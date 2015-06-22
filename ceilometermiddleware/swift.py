@@ -30,7 +30,7 @@ before "proxy-server" and add the following filter in the file:
     # Set control_exchange to publish to.
     control_exchange = swift
     # Set transport url
-    transport_url = rabbit://me:passwd@host:5672/virtual_host
+    url = rabbit://me:passwd@host:5672/virtual_host
     # set messaging driver
     driver = messaging
     # set topic
