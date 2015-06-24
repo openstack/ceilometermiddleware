@@ -328,3 +328,30 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual("account", data[2]['target']['id'])
+
+    def test_ignore_requests_from_project(self):
+        app = swift.Swift(FakeApp(), {'ignore_projects': 'skip_proj'})
+
+        for proj_attr in ['HTTP_X_SERVICE_PROJECT_ID', 'HTTP_X_PROJECT_ID',
+                          'HTTP_X_TENANT_ID']:
+            for proj, calls in [('good', 1), ('skip_proj', 0)]:
+                req = FakeRequest('/1.0/CUSTOM_account/container/obj',
+                                  environ={'REQUEST_METHOD': 'GET',
+                                           proj_attr: proj})
+            with mock.patch('oslo.messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                self.assertEqual(calls, len(notify.call_args_list))
+
+    def test_ignore_requests_from_multiple_projects(self):
+        app = swift.Swift(FakeApp(), {'ignore_projects': 'skip_proj, ignore'})
+
+        for proj_attr in ['HTTP_X_SERVICE_PROJECT_ID', 'HTTP_X_PROJECT_ID',
+                          'HTTP_X_TENANT_ID']:
+            for proj, calls in [('good', 1), ('skip_proj', 0),
+                                ('also_good', 1), ('ignore', 0)]:
+                req = FakeRequest('/1.0/CUSTOM_account/container/obj',
+                                  environ={'REQUEST_METHOD': 'GET',
+                                           proj_attr: proj})
+            with mock.patch('oslo.messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                self.assertEqual(calls, len(notify.call_args_list))

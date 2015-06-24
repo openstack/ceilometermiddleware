@@ -35,6 +35,8 @@ before "proxy-server" and add the following filter in the file:
     driver = messaging
     # set topic
     topic = notifications
+    # skip metering of requests from listed project ids
+    ignore_projects = <proj_uuid>, <proj_uuid2>
 """
 import functools
 import logging
@@ -100,6 +102,9 @@ class Swift(object):
 
     def __init__(self, app, conf):
         self._app = app
+        self.ignore_projects = [
+            proj.strip() for proj in
+            conf.get('ignore_projects', 'gnocchi').split(',')]
 
         oslo_messaging.set_transport_defaults(conf.get('control_exchange',
                                                        'swift'))
@@ -156,6 +161,11 @@ class Swift(object):
 
     @_log_and_ignore_error
     def emit_event(self, env, bytes_received, bytes_sent, outcome='success'):
+        if (env.get('HTTP_X_SERVICE_PROJECT_ID') or
+                env.get('HTTP_X_PROJECT_ID') or
+                env.get('HTTP_X_TENANT_ID')) in self.ignore_projects:
+            return
+
         path = urlparse.quote(env['PATH_INFO'])
         method = env['REQUEST_METHOD']
         headers = {}
