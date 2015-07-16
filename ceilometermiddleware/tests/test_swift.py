@@ -59,7 +59,7 @@ class FakeRequest(object):
         self.environ = environ
 
 
-@mock.patch('oslo.messaging.get_transport', mock.MagicMock())
+@mock.patch('oslo_messaging.get_transport', mock.MagicMock())
 class TestSwift(tests_base.TestCase):
 
     def setUp(self):
@@ -75,7 +75,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {})
         req = FakeRequest('/1.0/account/container/obj',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             resp = app(req.environ, self.start_response)
             self.assertEqual(["This string is 28 bytes long"], list(resp))
             self.assertEqual(1, len(notify.call_args_list))
@@ -97,7 +97,7 @@ class TestSwift(tests_base.TestCase):
             environ={'REQUEST_METHOD': 'PUT',
                      'wsgi.input':
                      six.moves.cStringIO('some stuff')})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -117,7 +117,7 @@ class TestSwift(tests_base.TestCase):
             '/1.0/account/container/obj',
             environ={'REQUEST_METHOD': 'POST',
                      'wsgi.input': six.moves.cStringIO('some other stuff')})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -135,7 +135,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(body=['']), {})
         req = FakeRequest('/1.0/account/container/obj',
                           environ={'REQUEST_METHOD': 'HEAD'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -152,7 +152,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(body=['']), {})
         req = FakeRequest('/1.0/account/container/obj',
                           environ={'REQUEST_METHOD': 'BOGUS'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -168,7 +168,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {})
         req = FakeRequest('/1.0/account/container',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -186,7 +186,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {})
         req = FakeRequest('/1.0/account/container',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -209,7 +209,7 @@ class TestSwift(tests_base.TestCase):
                           headers={'X_VAR1': 'value1',
                                    'X_VAR2': 'value2',
                                    'TOKEN': 'token'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -235,7 +235,7 @@ class TestSwift(tests_base.TestCase):
         req = FakeRequest('/1.0/account/container',
                           environ={'REQUEST_METHOD': 'GET'},
                           headers={'UNICODE': uni})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -257,7 +257,7 @@ class TestSwift(tests_base.TestCase):
         })
         req = FakeRequest('/1.0/account/container',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -275,14 +275,14 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {})
         req = FakeRequest('/5.0//',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(0, len(notify.call_args_list))
 
     def test_missing_resource_id(self):
         app = swift.Swift(FakeApp(), {})
         req = FakeRequest('/v1/', environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(0, len(notify.call_args_list))
 
@@ -292,7 +292,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(body=["test"]), {})
         req = FakeRequest('/1.0/account/container',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             resp = list(app(req.environ, self.start_response))
             self.assertEqual(0, len(notify.call_args_list))
             self.assertEqual(["test"], resp)
@@ -301,7 +301,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {})
         req = FakeRequest('/1.0/AUTH_account/container/obj',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -311,7 +311,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {'reseller_prefix': 'CUSTOM_'})
         req = FakeRequest('/1.0/CUSTOM_account/container/obj',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -323,7 +323,7 @@ class TestSwift(tests_base.TestCase):
             FakeApp(), {'reseller_prefix': 'CUSTOM'})
         req = FakeRequest('/1.0/CUSTOM_account/container/obj',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
@@ -338,7 +338,7 @@ class TestSwift(tests_base.TestCase):
                 req = FakeRequest('/1.0/CUSTOM_account/container/obj',
                                   environ={'REQUEST_METHOD': 'GET',
                                            proj_attr: proj})
-            with mock.patch('oslo.messaging.Notifier.info') as notify:
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
                 list(app(req.environ, self.start_response))
                 self.assertEqual(calls, len(notify.call_args_list))
 
@@ -352,7 +352,7 @@ class TestSwift(tests_base.TestCase):
                 req = FakeRequest('/1.0/CUSTOM_account/container/obj',
                                   environ={'REQUEST_METHOD': 'GET',
                                            proj_attr: proj})
-            with mock.patch('oslo.messaging.Notifier.info') as notify:
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
                 list(app(req.environ, self.start_response))
                 self.assertEqual(calls, len(notify.call_args_list))
 
@@ -361,7 +361,7 @@ class TestSwift(tests_base.TestCase):
             FakeApp(), {'reseller_prefix': 'CUSTOM'})
         req = FakeRequest('/1.0/CUSTOM/container/obj',
                           environ={'REQUEST_METHOD': 'GET'})
-        with mock.patch('oslo.messaging.Notifier.info') as notify:
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             data = notify.call_args_list[0][0]
             self.assertIsNot(0, len(data[2]['target']['id']))
