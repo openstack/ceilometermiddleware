@@ -216,7 +216,8 @@ class Swift(object):
         initiator = cadf_resource.Resource(
             typeURI='service/security/account/user',
             id=env.get('HTTP_X_USER_ID'))
-        initiator.project_id = env.get('HTTP_X_TENANT_ID')
+        initiator.project_id = (env.get('HTTP_X_PROJECT_ID') or
+                                env.get('HTTP_X_TENANT_ID'))
 
         # build notification body
         event = cadf_event.Event(eventTime=now, outcome=outcome,
