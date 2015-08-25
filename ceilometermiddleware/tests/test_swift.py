@@ -381,3 +381,16 @@ class TestSwift(tests_base.TestCase):
             self.assertIsNone(metadata['container'])
             self.assertIsNone(metadata['object'])
             self.assertEqual('head', data[2]['target']['action'])
+
+    def test_put_with_swift_source(self):
+        app = swift.Swift(FakeApp(), {})
+
+        req = FakeRequest(
+            '/1.0/account/container/obj',
+            environ={'REQUEST_METHOD': 'PUT',
+                     'wsgi.input':
+                     six.moves.cStringIO('some stuff'),
+                     'swift.source': 'RL'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            self.assertEqual(False, notify.called)

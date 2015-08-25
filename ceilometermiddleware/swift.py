@@ -161,9 +161,10 @@ class Swift(object):
 
     @_log_and_ignore_error
     def emit_event(self, env, bytes_received, bytes_sent, outcome='success'):
-        if (env.get('HTTP_X_SERVICE_PROJECT_ID') or
+        if ((env.get('HTTP_X_SERVICE_PROJECT_ID') or
                 env.get('HTTP_X_PROJECT_ID') or
-                env.get('HTTP_X_TENANT_ID')) in self.ignore_projects:
+                env.get('HTTP_X_TENANT_ID')) in self.ignore_projects or
+                env.get('swift.source') is not None):
             return
 
         path = urlparse.quote(env['PATH_INFO'])
