@@ -365,3 +365,19 @@ class TestSwift(tests_base.TestCase):
             list(app(req.environ, self.start_response))
             data = notify.call_args_list[0][0]
             self.assertIsNot(0, len(data[2]['target']['id']))
+
+    def test_head_account(self):
+        app = swift.Swift(FakeApp(body=['']), {})
+        req = FakeRequest('/1.0/account',
+                          environ={'REQUEST_METHOD': 'HEAD'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            self.assertEqual(1, len(notify.call_args_list))
+            data = notify.call_args_list[0][0]
+            self.assertEqual('objectstore.http.request', data[1])
+            self.assertIsNone(data[2].get('measurements'))
+            metadata = data[2]['target']['metadata']
+            self.assertEqual('1.0', metadata['version'])
+            self.assertIsNone(metadata['container'])
+            self.assertIsNone(metadata['object'])
+            self.assertEqual('head', data[2]['target']['action'])
