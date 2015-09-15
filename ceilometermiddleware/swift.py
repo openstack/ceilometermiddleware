@@ -179,8 +179,15 @@ class Swift(object):
 
         try:
             container = obj = None
-            version, account, remainder = path.replace(
-                '/', '', 1).split('/', 2)
+            path = path.replace('/', '', 1)
+            version, account, remainder = path.split('/', 2)
+        except ValueError:
+            try:
+                version, account = path.split('/', 1)
+                remainder = None
+            except ValueError:
+                return
+        try:
             if not version or not account:
                 raise ValueError('Invalid path: %s' % path)
             if remainder:
