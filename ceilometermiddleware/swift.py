@@ -32,7 +32,7 @@ before "proxy-server" and add the following filter in the file:
     # Set transport url
     url = rabbit://me:passwd@host:5672/virtual_host
     # set messaging driver
-    driver = messaging
+    driver = messagingv2
     # set topic
     topic = notifications
     # skip metering of requests from listed project ids
@@ -111,7 +111,7 @@ class Swift(object):
         self._notifier = oslo_messaging.Notifier(
             oslo_messaging.get_transport(cfg.CONF, url=conf.get('url')),
             publisher_id='ceilometermiddleware',
-            driver=conf.get('driver', 'messaging'),
+            driver=conf.get('driver', 'messagingv2'),
             topic=conf.get('topic', 'notifications'))
 
         self.metadata_headers = [h.strip().replace('-', '_').lower()
