@@ -393,4 +393,4 @@ class TestSwift(tests_base.TestCase):
                      'swift.source': 'RL'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
-            self.assertEqual(False, notify.called)
+            self.assertFalse(notify.called)
