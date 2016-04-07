@@ -216,7 +216,7 @@ class Swift(object):
         # build object store details
         target = cadf_resource.Resource(
             typeURI='service/storage/object',
-            id=account.partition(self.reseller_prefix)[2])
+            id=account.partition(self.reseller_prefix)[2] or path)
         target.metadata = resource_metadata
         target.action = method.lower()
 

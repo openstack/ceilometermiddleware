@@ -317,7 +317,7 @@ class TestSwift(tests_base.TestCase):
             data = notify.call_args_list[0][0]
             self.assertEqual("account", data[2]['target']['id'])
 
-    def test_invalid_reseller_prefix(self):
+    def test_incomplete_reseller_prefix(self):
         # Custom reseller prefix set, but without trailing underscore
         app = swift.Swift(
             FakeApp(), {'reseller_prefix': 'CUSTOM'})
@@ -328,6 +328,17 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual("account", data[2]['target']['id'])
+
+    def test_invalid_reseller_prefix(self):
+        app = swift.Swift(
+            FakeApp(), {'reseller_prefix': 'AUTH_'})
+        req = FakeRequest('/1.0/admin/bucket',
+                          environ={'REQUEST_METHOD': 'GET'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            self.assertEqual(1, len(notify.call_args_list))
+            data = notify.call_args_list[0][0]
+            self.assertEqual("1.0/admin/bucket", data[2]['target']['id'])
 
     def test_ignore_requests_from_project(self):
         app = swift.Swift(FakeApp(), {'ignore_projects': 'skip_proj'})
