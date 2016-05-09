@@ -42,7 +42,6 @@ import functools
 import logging
 
 from oslo_config import cfg
-from oslo_context import context
 import oslo_messaging
 from oslo_utils import timeutils
 from pycadf import event as cadf_event
@@ -245,8 +244,7 @@ class Swift(object):
                 metric=cadf_metric.Metric(
                     name='storage.objects.outgoing.bytes', unit='B')))
 
-        self._notifier.info(context.get_admin_context().to_dict(),
-                            'objectstore.http.request', event.as_dict())
+        self._notifier.info({}, 'objectstore.http.request', event.as_dict())
 
 
 def filter_factory(global_conf, **local_conf):
