@@ -20,6 +20,7 @@ import six
 
 from ceilometermiddleware import swift
 from ceilometermiddleware.tests import base as tests_base
+from threading import Event
 
 
 class FakeApp(object):
@@ -78,6 +79,31 @@ class TestSwift(tests_base.TestCase):
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             resp = app(req.environ, self.start_response)
             self.assertEqual(["This string is 28 bytes long"], list(resp))
+            self.assertEqual(1, len(notify.call_args_list))
+            data = notify.call_args_list[0][0]
+            self.assertEqual('objectstore.http.request', data[1])
+            self.assertEqual(28, data[2]['measurements'][0]['result'])
+            self.assertEqual('storage.objects.outgoing.bytes',
+                             data[2]['measurements'][0]['metric']['name'])
+            metadata = data[2]['target']['metadata']
+            self.assertEqual('1.0', metadata['version'])
+            self.assertEqual('container', metadata['container'])
+            self.assertEqual('obj', metadata['object'])
+            self.assertEqual('get', data[2]['target']['action'])
+
+    def test_get_background(self):
+        notified = Event()
+        app = swift.Swift(FakeApp(),
+                          {"nonblocking_notify": "True",
+                           "send_queue_size": "1"})
+        req = FakeRequest('/1.0/account/container/obj',
+                          environ={'REQUEST_METHOD': 'GET'})
+        with mock.patch('oslo_messaging.Notifier.info',
+                        side_effect=lambda *args, **kwargs: notified.set()
+                        ) as notify:
+            resp = app(req.environ, self.start_response)
+            self.assertEqual(["This string is 28 bytes long"], list(resp))
+            notified.wait()
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
