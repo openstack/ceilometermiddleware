@@ -56,3 +56,6 @@ doc/build/
 
 # PyBuilder
 target/
+
+# Files created by releasenotes build
+releasenotes/build
