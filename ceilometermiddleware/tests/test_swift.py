@@ -12,10 +12,8 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-
 import mock
 from oslo_config import cfg
-from oslo_utils import timeutils
 import six
 
 from ceilometermiddleware import swift
@@ -312,9 +310,9 @@ class TestSwift(tests_base.TestCase):
             list(app(req.environ, self.start_response))
             self.assertEqual(0, len(notify.call_args_list))
 
-    @mock.patch.object(timeutils, 'utcnow')
-    def test_emit_event_fail(self, mocked_time):
-        mocked_time.side_effect = Exception("a exception")
+    @mock.patch('six.moves.urllib.parse.quote')
+    def test_emit_event_fail(self, mocked_func):
+        mocked_func.side_effect = Exception("a exception")
         app = swift.Swift(FakeApp(body=["test"]), {})
         req = FakeRequest('/1.0/account/container',
                           environ={'REQUEST_METHOD': 'GET'})
