@@ -150,9 +150,7 @@ class Swift(object):
             if Swift.event_queue is None:
                 send_queue_size = int(conf.get('send_queue_size', 1000))
                 Swift.event_queue = queue.Queue(send_queue_size)
-                Swift.event_sender = SendEventThread(self._notifier)
-                Swift.event_sender.start()
-                _LOG.debug('Started sender thread')
+                self.start_sender_thread()
             Swift.threadLock.release()
 
     def __call__(self, env, start_response):
@@ -280,11 +278,20 @@ class Swift(object):
         if self.nonblocking_notify:
             try:
                 Swift.event_queue.put(event, False)
-                _LOG.debug('Event %s added to send queue', event.id)
+                if not Swift.event_sender.is_alive():
+                    Swift.threadLock.acquire()
+                    self.start_sender_thread()
+                    Swift.threadLock.release()
+
             except queue.Full:
                 _LOG.warning('Send queue FULL: Event %s not added', event.id)
         else:
             Swift.send_notification(self._notifier, event)
+
+    def start_sender_thread(self):
+        Swift.event_sender = SendEventThread(self._notifier)
+        Swift.event_sender.daemon = True
+        Swift.event_sender.start()
 
     @staticmethod
     def send_notification(notifier, event):
@@ -296,7 +303,6 @@ class SendEventThread(threading.Thread):
     def __init__(self, notifier):
         super(SendEventThread, self).__init__()
         self.notifier = notifier
-        self.daemon = True
 
     def run(self):
         """Send events without blocking swift proxy."""
@@ -307,7 +313,7 @@ class SendEventThread(threading.Thread):
                 _LOG.debug('Got event %s from queue - now send it', event.id)
                 Swift.send_notification(self.notifier, event)
                 _LOG.debug('Event %s sent.', event.id)
-            except Exception:
+            except BaseException:
                 _LOG.exception("SendEventThread loop exception")
 
 
