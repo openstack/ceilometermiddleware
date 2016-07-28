@@ -45,12 +45,12 @@ before "proxy-server" and add the following filter in the file:
     # Logging level control
     log_level = WARNING
 """
+import datetime
 import functools
 import logging
 
 from oslo_config import cfg
 import oslo_messaging
-from oslo_utils import timeutils
 from pycadf import event as cadf_event
 from pycadf.helper import api
 from pycadf import measurement as cadf_measurement
@@ -229,7 +229,7 @@ class Swift(object):
         except ValueError:
             return
 
-        now = timeutils.utcnow().isoformat()
+        now = datetime.datetime.utcnow().isoformat()
 
         resource_metadata = {
             "path": path,
