@@ -8,5 +8,8 @@ features:
     notifications will be queued for delivery in a single thread.
     Set ``send_queue_size`` to customize the length of this delivery
     queue (default size 1000).
+    Set ``send_timeout`` in seconds (default 10.0) to customize how
+    long to wait for a notification to be sent before trying again
+    in a new thread.
   - Introduced option to customize the logging level using the
     ``log_level`` option (default WARNING).

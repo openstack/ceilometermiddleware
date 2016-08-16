@@ -64,6 +64,7 @@ class TestSwift(tests_base.TestCase):
     def setUp(self):
         super(TestSwift, self).setUp()
         cfg.CONF([], project='ceilometermiddleware')
+        swift.Swift.event_queue = None
         self.addCleanup(cfg.CONF.reset)
 
     @staticmethod
@@ -103,6 +104,46 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(["This string is 28 bytes long"], list(resp))
             notified.wait()
             self.assertEqual(1, len(notify.call_args_list))
+            data = notify.call_args_list[0][0]
+            self.assertEqual('objectstore.http.request', data[1])
+            self.assertEqual(28, data[2]['measurements'][0]['result'])
+            self.assertEqual('storage.objects.outgoing.bytes',
+                             data[2]['measurements'][0]['metric']['name'])
+            metadata = data[2]['target']['metadata']
+            self.assertEqual('1.0', metadata['version'])
+            self.assertEqual('container', metadata['container'])
+            self.assertEqual('obj', metadata['object'])
+            self.assertEqual('get', data[2]['target']['action'])
+
+    def test_get_background_timeout(self):
+        self.do_timeout = True
+        self.send_timeout = 0.001
+        self.send_delay = 0.005
+        self.assertTrue(self.send_delay > self.send_timeout)
+
+        def timeout_first_try(notified):
+            if self.do_timeout:
+                self.do_timeout = False
+                notified.wait(self.send_delay)
+            else:
+                notified.set()
+
+        notified = Event()
+        app = swift.Swift(FakeApp(),
+                          {"nonblocking_notify": "True",
+                           "send_queue_size": "1",
+                           "send_timeout": str(self.send_timeout)})
+        req = FakeRequest('/1.0/account/container/obj',
+                          environ={'REQUEST_METHOD': 'GET'})
+        with mock.patch('oslo_messaging.Notifier.info',
+                        side_effect=lambda *args, **kwargs:
+                        timeout_first_try(notified)
+                        ) as notify:
+            resp = app(req.environ, self.start_response)
+            self.assertEqual(["This string is 28 bytes long"], list(resp))
+            notified.wait()
+
+            self.assertEqual(2, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
             self.assertEqual(28, data[2]['measurements'][0]['result'])
