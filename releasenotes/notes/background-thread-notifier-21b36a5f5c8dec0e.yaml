@@ -1,0 +1,12 @@
+---
+features:
+  - Introduced option to send notifications from a background thread
+    instead of blocking the service response to send the
+    notification. This option is disabled by default, retaining
+    previous behavior. Enable by setting ``nonblocking_notify`` to
+    ``True`` in the middleware configuration. When enabled
+    notifications will be queued for delivery in a single thread.
+    Set ``send_queue_size`` to customize the length of this delivery
+    queue (default size 1000).
+  - Introduced option to customize the logging level using the
+    ``log_level`` option (default WARNING).
