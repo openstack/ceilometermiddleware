@@ -18,7 +18,7 @@ import six
 
 from ceilometermiddleware import swift
 from ceilometermiddleware.tests import base as tests_base
-from threading import Event
+import threading
 
 
 class FakeApp(object):
@@ -90,7 +90,7 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual('get', data[2]['target']['action'])
 
     def test_get_background(self):
-        notified = Event()
+        notified = threading.Event()
         app = swift.Swift(FakeApp(),
                           {"nonblocking_notify": "True",
                            "send_queue_size": "1"})
