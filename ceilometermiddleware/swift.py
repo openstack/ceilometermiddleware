@@ -61,7 +61,7 @@ import six.moves.queue as queue
 import six.moves.urllib.parse as urlparse
 import threading
 
-_LOG = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def _log_and_ignore_error(fn):
@@ -70,8 +70,8 @@ def _log_and_ignore_error(fn):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
-            _LOG.exception('An exception occurred processing '
-                           'the API call: %s ', e)
+            LOG.exception('An exception occurred processing '
+                          'the API call: %s ', e)
     return wrapper
 
 
@@ -134,7 +134,7 @@ class Swift(object):
         if self.reseller_prefix and self.reseller_prefix[-1] != '_':
             self.reseller_prefix += '_'
 
-        _LOG.setLevel(getattr(logging, conf.get('log_level', 'WARNING')))
+        LOG.setLevel(getattr(logging, conf.get('log_level', 'WARNING')))
 
         # NOTE: If the background thread's send queue fills up, the event will
         #  be discarded
@@ -284,7 +284,7 @@ class Swift(object):
                     Swift.threadLock.release()
 
             except queue.Full:
-                _LOG.warning('Send queue FULL: Event %s not added', event.id)
+                LOG.warning('Send queue FULL: Event %s not added', event.id)
         else:
             Swift.send_notification(self._notifier, event)
 
@@ -308,13 +308,13 @@ class SendEventThread(threading.Thread):
         """Send events without blocking swift proxy."""
         while True:
             try:
-                _LOG.debug('Wait for event from send queue')
+                LOG.debug('Wait for event from send queue')
                 event = Swift.event_queue.get()
-                _LOG.debug('Got event %s from queue - now send it', event.id)
+                LOG.debug('Got event %s from queue - now send it', event.id)
                 Swift.send_notification(self.notifier, event)
-                _LOG.debug('Event %s sent.', event.id)
+                LOG.debug('Event %s sent.', event.id)
             except BaseException:
-                _LOG.exception("SendEventThread loop exception")
+                LOG.exception("SendEventThread loop exception")
 
 
 def filter_factory(global_conf, **local_conf):
