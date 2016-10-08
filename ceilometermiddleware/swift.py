@@ -39,6 +39,9 @@ before "proxy-server" and add the following filter in the file:
     ignore_projects = <proj_uuid>, <proj_uuid2>
     # Whether to send events to messaging driver in a background thread
     nonblocking_notify = False
+    # How long (secs) to wait for an event to be sent in background thread
+    # before starting a new thread to try again
+    send_timeout = 10
     # Queue size for sending notifications in background thread (0=unlimited).
     # New notifications will be discarded if the queue is full.
     send_queue_size = 1000
@@ -144,13 +147,15 @@ class Swift(object):
         #  destination is unavailable.
         self.nonblocking_notify = conf.get('nonblocking_notify', False)
 
-        # Initialize the sending queue and thread, but only once
+        # Initialize the sending queue and threads, but only once
+        self.send_timeout = float(conf.get('send_timeout', 10.0))
         if self.nonblocking_notify and Swift.event_queue is None:
             Swift.threadLock.acquire()
             if Swift.event_queue is None:
                 send_queue_size = int(conf.get('send_queue_size', 1000))
                 Swift.event_queue = queue.Queue(send_queue_size)
-                self.start_sender_thread()
+                self.start_queue_thread()
+                self.start_sender_thread(self._notifier)
             Swift.threadLock.release()
 
     def __call__(self, env, start_response):
@@ -277,44 +282,110 @@ class Swift(object):
 
         if self.nonblocking_notify:
             try:
-                Swift.event_queue.put(event, False)
-                if not Swift.event_sender.is_alive():
+                _LOG.debug('Swift: Adding event %s to send queue', event.id)
+                self.event_queue.put(event, False)
+                if not self.event_sender.is_alive():
                     Swift.threadLock.acquire()
-                    self.start_sender_thread()
+                    self.start_sender_thread(self._notifier)
                     Swift.threadLock.release()
-
+                if not self.queue_watchdog.is_alive():
+                    Swift.threadLock.acquire()
+                    self.start_queue_thread()
+                    Swift.threadLock.release()
             except queue.Full:
-                _LOG.warning('Send queue FULL: Event %s not added', event.id)
+                _LOG.warning('Swift: Send queue FULL: Event %s not added',
+                             event.id)
         else:
-            Swift.send_notification(self._notifier, event)
+            self.send_notification(self._notifier, event)
 
-    def start_sender_thread(self):
-        Swift.event_sender = SendEventThread(self._notifier)
+    def start_queue_thread(self):
+        Swift.queue_watchdog = ProcessQueueThread(self,
+            self.event_queue, self._notifier, self.send_timeout)
+        Swift.queue_watchdog.daemon = True
+        Swift.queue_watchdog.start()
+
+    def start_sender_thread(self, notifier):
+        Swift.event_sender = SendEventThread(self, notifier)
         Swift.event_sender.daemon = True
         Swift.event_sender.start()
 
-    @staticmethod
-    def send_notification(notifier, event):
+    def send_notification(self, notifier, event):
         notifier.info({}, 'objectstore.http.request', event.as_dict())
+        _LOG.debug('Swift: notifier.info() completed for event %s.',
+                   event.id)
+
+
+class ProcessQueueThread(threading.Thread):
+
+    def __init__(self, swift, event_queue, notifier, timeout):
+        super(ProcessQueueThread, self).__init__()
+        self.event_queue = event_queue
+        self.notifier = notifier
+        self.timeout = timeout
+        self.swift = swift
+
+    def run(self):
+        """Send events without blocking swift proxy."""
+        while self.swift.nonblocking_notify:
+            try:
+                _LOG.debug('ProcessQueue: Wait for event from send queue')
+                event = self.event_queue.get()
+                _LOG.debug('ProcessQueue: Got event %s from queue - trigger '
+                           'send', event.id)
+                done_sending = Swift.event_sender.trigger_send(event)
+                while done_sending.wait(self.timeout) is \
+                     False and Swift.event_sender.event_to_send is not None:
+                  _LOG.warning('ProcessQueue: Timeout sending event %s - '
+                               'retry in new thread.',
+                               event.id)
+                  Swift.threadLock.acquire()
+                  Swift.event_sender.die()
+                  self.swift.start_sender_thread(self.notifier)
+                  Swift.threadLock.release()
+                  done_sending = Swift.event_sender.trigger_send(event)
+            except BaseException as e:
+                _LOG.error("ProcessQueue: Exception in sending thread: %s",
+                           e.message)
+                _LOG.exception("ProcessQueue: SendEventThread loop exception")
 
 
 class SendEventThread(threading.Thread):
 
-    def __init__(self, notifier):
+    def __init__(self, swift, notifier):
         super(SendEventThread, self).__init__()
+        self.swift = swift
         self.notifier = notifier
+        self.ready_to_send = threading.Event()
+        self.ready_to_send.clear()
+        self.done_sending = threading.Event()
+        self.event_to_send = None
+        self.alive = True
+
+    def trigger_send(self, event):
+        _LOG.debug(
+            'SendEvent: Set/clear thread events to trigger sending')
+        self.event_to_send = event
+        self.done_sending.clear()
+        self.ready_to_send.set()
+        return self.done_sending
+
+    def die(self):
+        self.alive = False
+        self.event_to_send = None
+        self.ready_to_send.set()
 
     def run(self):
-        """Send events without blocking swift proxy."""
-        while True:
-            try:
-                _LOG.debug('Wait for event from send queue')
-                event = Swift.event_queue.get()
-                _LOG.debug('Got event %s from queue - now send it', event.id)
-                Swift.send_notification(self.notifier, event)
-                _LOG.debug('Event %s sent.', event.id)
-            except BaseException:
-                _LOG.exception("SendEventThread loop exception")
+        while self.swift.nonblocking_notify and self.alive:
+            _LOG.debug('SendEvent: Wait for ready_to_send')
+            self.ready_to_send.wait()
+            if self.event_to_send is not None:
+                _LOG.debug('SendEvent: Sending event %s', self.event_to_send.id)
+                self.swift.send_notification(self.notifier, self.event_to_send)
+                self.event_to_send = None
+                _LOG.debug(
+                    'SendEvent: Reset send trigger thread events')
+                self.done_sending.set()
+                self.ready_to_send.clear()
 
 
 def filter_factory(global_conf, **local_conf):
