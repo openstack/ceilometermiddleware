@@ -50,6 +50,7 @@ import logging
 
 from oslo_config import cfg
 import oslo_messaging
+from oslo_utils import strutils
 from oslo_utils import timeutils
 from pycadf import event as cadf_event
 from pycadf.helper import api
@@ -142,7 +143,8 @@ class Swift(object):
         # For backward compatibility we default to False and therefore wait for
         #  sending to complete. This causes swift proxy to hang if the
         #  destination is unavailable.
-        self.nonblocking_notify = conf.get('nonblocking_notify', False)
+        self.nonblocking_notify = strutils.bool_from_string(
+            conf.get('nonblocking_notify', False))
 
         # Initialize the sending queue and thread, but only once
         if self.nonblocking_notify and Swift.event_queue is None:
