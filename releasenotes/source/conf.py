@@ -63,7 +63,8 @@ title = 'Ceilometer Middleware Release Notes'
 target_name = 'ceilometermiddleware'
 
 # The link to the browsable source code (for the left hand menu)
-oslosphinx_cgit_link = 'http://git.openstack.org/cgit/openstack/' + target_name
+oslosphinx_cgit_link = 'https://git.openstack.org/cgit/openstack/' + \
+    target_name
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
