@@ -1,8 +1,6 @@
-==============================
+===================================
  Ocata Series Release Notes
-==============================
+===================================
 
- .. release-notes::
-..  Uncomment once ocata branch is cut:
+.. release-notes::
    :branch: origin/stable/ocata
-
