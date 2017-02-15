@@ -1,7 +1,7 @@
 ==============================
- Mikata Series Release Notes
+ Newton Series Release Notes
 ==============================
 
  .. release-notes::
-   :branch: origin/stable/mitaka
+   :branch: origin/stable/newton
 
