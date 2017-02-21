@@ -124,7 +124,7 @@ class Swift(object):
             oslo_messaging.get_transport(cfg.CONF, url=conf.get('url')),
             publisher_id='ceilometermiddleware',
             driver=conf.get('driver', 'messagingv2'),
-            topic=conf.get('topic', 'notifications'))
+            topics=[conf.get('topic', 'notifications')])
 
         self.metadata_headers = [h.strip().replace('-', '_').lower()
                                  for h in conf.get(
