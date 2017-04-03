@@ -121,7 +121,8 @@ class Swift(object):
         oslo_messaging.set_transport_defaults(conf.get('control_exchange',
                                                        'swift'))
         self._notifier = oslo_messaging.Notifier(
-            oslo_messaging.get_transport(cfg.CONF, url=conf.get('url')),
+            oslo_messaging.get_notification_transport(cfg.CONF,
+                                                      url=conf.get('url')),
             publisher_id='ceilometermiddleware',
             driver=conf.get('driver', 'messagingv2'),
             topics=[conf.get('topic', 'notifications')])

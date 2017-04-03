@@ -1,0 +1,5 @@
+---
+fixes:
+  - Corrects retrieval of (notification) transport_url for oslo.messaging.
+    Issue would occur when oslo.messaging RPC and Notification backends were
+    separated.
