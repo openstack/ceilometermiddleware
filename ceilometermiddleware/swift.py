@@ -36,7 +36,7 @@ before "proxy-server" and add the following filter in the file:
     # set topic
     topic = notifications
     # skip metering of requests from listed project ids
-    ignore_projects = <proj_uuid>, <proj_uuid2>
+    ignore_projects = <proj_uuid>, <proj_uuid2>, <proj_name>
     # Whether to send events to messaging driver in a background thread
     nonblocking_notify = False
     # Queue size for sending notifications in background thread (0=unlimited).
@@ -44,11 +44,26 @@ before "proxy-server" and add the following filter in the file:
     send_queue_size = 1000
     # Logging level control
     log_level = WARNING
+
+    # All keystoneauth1 options can be set to query project name for
+    # ignore_projects option, here is just a example:
+    auth_type = password
+    auth_url = https://[::1]:5000
+    project_name = service
+    project_domain_name = Default
+    username = user
+    user_domain_name = Default
+    password = a_big_secret
+    interface = public
 """
 import datetime
 import functools
 import logging
 
+from keystoneauth1 import exceptions as ksa_exc
+from keystoneauth1.loading import base as ksa_base
+from keystoneauth1.loading import session as ksa_session
+from keystoneclient.v3 import client as ks_client
 from oslo_config import cfg
 import oslo_messaging
 from oslo_utils import strutils
@@ -62,7 +77,18 @@ import six.moves.queue as queue
 import six.moves.urllib.parse as urlparse
 import threading
 
+from ceilometermiddleware import ksa_adapter
+
 LOG = logging.getLogger(__name__)
+
+
+def list_from_csv(comma_separated_str):
+    if comma_separated_str:
+        return list(
+            filter(lambda x: x,
+                   map(lambda x: x.strip(),
+                       comma_separated_str.split(','))))
+    return []
 
 
 def _log_and_ignore_error(fn):
@@ -106,17 +132,30 @@ class InputProxy(object):
         return line
 
 
+class KeystoneClientLoader(ksa_adapter.Adapter):
+    """Keystone client adapter loader.
+
+    Keystone client and Keystoneauth1 adapter take exactly the same options, so
+    it's safe to create a keystone client with keystoneauth adapter options.
+    """
+
+    @property
+    def plugin_class(self):
+        return ks_client.Client
+
+
 class Swift(object):
     """Swift middleware used for counting requests."""
 
     event_queue = None
     threadLock = threading.Lock()
 
+    DEFAULT_IGNORE_PROJECT_NAMES = ['service']
+
     def __init__(self, app, conf):
         self._app = app
-        self.ignore_projects = [
-            proj.strip() for proj in
-            conf.get('ignore_projects', 'gnocchi').split(',')]
+
+        self.ignore_projects = self._get_ignore_projects(conf)
 
         oslo_messaging.set_transport_defaults(conf.get('control_exchange',
                                                        'swift'))
@@ -154,6 +193,54 @@ class Swift(object):
                 Swift.event_queue = queue.Queue(send_queue_size)
                 self.start_sender_thread()
             Swift.threadLock.release()
+
+    def _get_ignore_projects(self, conf):
+        if 'auth_type' not in conf:
+            LOG.info("'auth_type' is not set assuming ignore_projects are "
+                     "only project uuid.")
+            return list_from_csv(conf.get('ignore_projects'))
+
+        if 'ignore_projects' in conf:
+            ignore_projects = list_from_csv(conf.get('ignore_projects'))
+        else:
+            ignore_projects = self.DEFAULT_IGNORE_PROJECT_NAMES
+
+        if not ignore_projects:
+            return []
+
+        def opt_getter(opt):
+            # TODO(sileht): This method does not support deprecated opt names
+            val = conf.get(opt.name)
+            if val is None:
+                val = conf.get(opt.dest)
+            return val
+
+        auth_type = conf.get('auth_type')
+        plugin = ksa_base.get_plugin_loader(auth_type)
+
+        auth = plugin.load_from_options_getter(opt_getter)
+        session = ksa_session.Session().load_from_options_getter(
+            opt_getter, auth=auth)
+        client = KeystoneClientLoader().load_from_options_getter(
+            opt_getter, session=session)
+
+        projects = []
+        for name_or_id in ignore_projects:
+            projects.extend(self._get_keystone_projects(client, name_or_id))
+        return projects
+
+    @staticmethod
+    def _get_keystone_projects(client, name_or_id):
+        try:
+            return [client.projects.get(name_or_id)]
+        except ksa_exc.NotFound:
+            pass
+        if isinstance(name_or_id, six.binary_type):
+            name_or_id = name_or_id.decode('utf-8', 'strict')
+        projects = client.projects.list(name=name_or_id)
+        if not projects:
+            LOG.warning("fail to find project '%s' in keystone", name_or_id)
+        return [p.id for p in projects]
 
     def __call__(self, env, start_response):
         start_response_args = [None]

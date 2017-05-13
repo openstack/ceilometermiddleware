@@ -12,13 +12,15 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import threading
+
 import mock
 from oslo_config import cfg
 import six
 
 from ceilometermiddleware import swift
 from ceilometermiddleware.tests import base as tests_base
-import threading
+from keystoneauth1.fixture import keystoneauth_betamax as betamax
 
 
 class FakeApp(object):
@@ -429,3 +431,31 @@ class TestSwift(tests_base.TestCase):
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertFalse(notify.called)
+
+    def test_ignore_projects_without_keystone(self):
+        app = swift.Swift(FakeApp(), {
+            'ignore_projects': 'cf0356aaac7c42bba5a744339a6169fa,'
+                               '18157dd635bb413c9e27686fee93c583',
+        })
+        self.assertEqual(["cf0356aaac7c42bba5a744339a6169fa",
+                          "18157dd635bb413c9e27686fee93c583"],
+                         app.ignore_projects)
+
+    @mock.patch.object(swift.LOG, 'warning')
+    def test_ignore_projects_with_keystone(self, warning):
+        self.useFixture(betamax.BetamaxFixture(
+            cassette_name='list_projects',
+            cassette_library_dir='ceilometermiddleware/tests/data',
+        ))
+        app = swift.Swift(FakeApp(), {
+            'auth_type': 'v2password',
+            'auth_url': 'https://[::1]:5000/v2.0',
+            'username': 'admin',
+            'tenant_name': 'admin',
+            'password': 'secret',
+            'ignore_projects': 'service,gnocchi',
+        })
+        self.assertEqual(["147cc0a9263c4964926f3ee7b6ba3685"],
+                         app.ignore_projects)
+        warning.assert_called_once_with(
+            "fail to find project '%s' in keystone", "gnocchi")

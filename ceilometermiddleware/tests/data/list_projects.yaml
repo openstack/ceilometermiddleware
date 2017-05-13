@@ -1,0 +1,514 @@
+http_interactions:
+- recorded_at: '2017-05-15T07:49:52'
+  request:
+    body:
+      encoding: utf-8
+      string: |-
+        {
+          "auth": {
+            "tenantName": "dummy",
+            "passwordCredentials": {
+              "username": "dummy",
+              "password": "********"
+            }
+          }
+        }
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '107'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - run.py keystoneauth1/2.20.0 python-requests/2.14.2 CPython/2.7.13
+    method: POST
+    uri: https://[::1]:5000/v2.0/tokens
+  response:
+    body:
+      encoding: null
+      string: |-
+        {
+          "access": {
+            "serviceCatalog": [
+              {
+                "type": "compute",
+                "endpoints_links": [],
+                "name": "nova",
+                "endpoints": [
+                  {
+                    "internalURL": "https://[::1]:8774/v2.1",
+                    "adminURL": "https://[::1]:8774/v2.1",
+                    "id": "1e879ab434b54b8abfd275feeb2ef9f3",
+                    "region": "RegionOne",
+                    "publicURL": "https://[::1]:8774/v2.1"
+                  }
+                ]
+              },
+              {
+                "type": "network",
+                "endpoints_links": [],
+                "name": "neutron",
+                "endpoints": [
+                  {
+                    "internalURL": "http://[::1]:9696",
+                    "adminURL": "http://[::1]:9696",
+                    "id": "83fcb786f646437f9a61cef72a9e43d7",
+                    "region": "RegionOne",
+                    "publicURL": "http://[::1]:9696"
+                  }
+                ]
+              },
+              {
+                "type": "volumev2",
+                "endpoints_links": [],
+                "name": "cinderv2",
+                "endpoints": [
+                  {
+                    "internalURL": "https://[::1]:8776/v2/ed980105f9d047e2bee738b3f261f126",
+                    "adminURL": "https://[::1]:8776/v2/ed980105f9d047e2bee738b3f261f126",
+                    "id": "973ef665c2ea4ec3b5c3d48932fad7a4",
+                    "region": "RegionOne",
+                    "publicURL": "https://[::1]:8776/v2/ed980105f9d047e2bee738b3f261f126"
+                  }
+                ]
+              },
+              {
+                "type": "volumev3",
+                "endpoints_links": [],
+                "name": "cinderv3",
+                "endpoints": [
+                  {
+                    "internalURL": "https://[::1]:8776/v3/ed980105f9d047e2bee738b3f261f126",
+                    "adminURL": "https://[::1]:8776/v3/ed980105f9d047e2bee738b3f261f126",
+                    "id": "0e80fe643d4d44729db99d0a5c882d1b",
+                    "region": "RegionOne",
+                    "publicURL": "https://[::1]:8776/v3/ed980105f9d047e2bee738b3f261f126"
+                  }
+                ]
+              },
+              {
+                "type": "image",
+                "endpoints_links": [],
+                "name": "glance",
+                "endpoints": [
+                  {
+                    "internalURL": "http://[::1]:9292",
+                    "adminURL": "http://[::1]:9292",
+                    "id": "7aad24b660a94254adc3546e4de4d668",
+                    "region": "RegionOne",
+                    "publicURL": "http://[::1]:9292"
+                  }
+                ]
+              },
+              {
+                "type": "volume",
+                "endpoints_links": [],
+                "name": "cinder",
+                "endpoints": [
+                  {
+                    "internalURL": "https://[::1]:8776/v1/ed980105f9d047e2bee738b3f261f126",
+                    "adminURL": "https://[::1]:8776/v1/ed980105f9d047e2bee738b3f261f126",
+                    "id": "8191ee00b695483796a9531bca70279b",
+                    "region": "RegionOne",
+                    "publicURL": "https://[::1]:8776/v1/ed980105f9d047e2bee738b3f261f126"
+                  }
+                ]
+              },
+              {
+                "type": "identity",
+                "endpoints_links": [],
+                "name": "keystone",
+                "endpoints": [
+                  {
+                    "internalURL": "https://[::1]:5000",
+                    "adminURL": "https://[::1]:35357",
+                    "id": "24ab268f1a7b47d4af493c4c74cd6130",
+                    "region": "RegionOne",
+                    "publicURL": "https://[::1]:5000"
+                  }
+                ]
+              }
+            ],
+            "user": {
+              "username": "dummy",
+              "roles_links": [],
+              "id": "f18b121edda04346b86610fa23983a0e",
+              "roles": [
+                {
+                  "name": "admin"
+                }
+              ],
+              "name": "dummy"
+            },
+            "token": {
+              "issued_at": "2017-05-15T07:49:52.000000Z",
+              "tenant": {
+                "enabled": true,
+                "id": "ed980105f9d047e2bee738b3f261f126",
+                "name": "dummy",
+                "description": "admin tenant"
+              },
+              "audit_ids": [
+                "VzK7yoNFT0qlUWg5KhDuMQ"
+              ],
+              "expires": "9999-12-31T23:59:59Z",
+              "id": "gAAAAABZGV2gZwV0SlycA_OIohX7kRAmTp84SnzsAYD5Uhey7RTzCf0NvxNRxLk5RsjRSMncSdro7eWgtMrSblZJCPl485IvHANL3E3gsxFJP9TjebqDiF4DtGhQmc4mHPB3kOBNzg3v2FrHB2hK77Cc4M7V1Pm_-nWBHxYxVNopVhrd80Y4-2c"
+            },
+            "metadata": {
+              "is_admin": 0,
+              "roles": [
+                "d3b61a4656d64cbbbdb0f13690e2ffe4"
+              ]
+            }
+          }
+        }
+    headers:
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '3183'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 May 2017 07:49:51 GMT
+      Keep-Alive:
+      - timeout=3, max=100
+      Server:
+      - Apache/2.4.18 (Ubuntu)
+      Strict-Transport-Security:
+      - max-age=15768000
+      Vary:
+      - X-Auth-Token
+      X-Distribution:
+      - Ubuntu
+      x-openstack-request-id:
+      - req-84cb5714-49dc-4bab-93ba-2b66ba566c30
+    status:
+      code: 200
+      message: OK
+    url: https://[::1]:5000/v2.0/tokens
+- recorded_at: '2017-05-15T07:49:53'
+  request:
+    body:
+      encoding: utf-8
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - run.py keystoneauth1/2.20.0 python-requests/2.14.2 CPython/2.7.13
+    method: GET
+    uri: https://[::1]:35357/
+  response:
+    body:
+      encoding: null
+      string: |-
+        {
+          "versions": {
+            "values": [
+              {
+                "status": "stable",
+                "updated": "2016-10-06T00:00:00Z",
+                "id": "v3.7",
+                "links": [
+                  {
+                    "rel": "self",
+                    "href": "https://[::1]:35357/v3/"
+                  }
+                ],
+                "media-types": [
+                  {
+                    "type": "application/vnd.openstack.identity-v3+json",
+                    "base": "application/json"
+                  }
+                ]
+              },
+              {
+                "status": "deprecated",
+                "updated": "2016-08-04T00:00:00Z",
+                "id": "v2.0",
+                "links": [
+                  {
+                    "rel": "self",
+                    "href": "https://[::1]:35357/v2.0/"
+                  },
+                  {
+                    "type": "text/html",
+                    "rel": "describedby",
+                    "href": "http://docs.openstack.org/"
+                  }
+                ],
+                "media-types": [
+                  {
+                    "type": "application/vnd.openstack.identity-v2.0+json",
+                    "base": "application/json"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+    headers:
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '627'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 May 2017 07:49:52 GMT
+      Keep-Alive:
+      - timeout=3, max=100
+      Server:
+      - Apache/2.4.18 (Ubuntu)
+      Strict-Transport-Security:
+      - max-age=15768000
+      Vary:
+      - X-Auth-Token
+      X-Distribution:
+      - Ubuntu
+    status:
+      code: 300
+      message: Multiple Choices
+    url: https://[::1]:35357/
+- recorded_at: '2017-05-15T07:49:53'
+  request:
+    body:
+      encoding: utf-8
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-keystoneclient
+      X-Auth-Token:
+      - gAAAAABZGV2gZwV0SlycA_OIohX7kRAmTp84SnzsAYD5Uhey7RTzCf0NvxNRxLk5RsjRSMncSdro7eWgtMrSblZJCPl485IvHANL3E3gsxFJP9TjebqDiF4DtGhQmc4mHPB3kOBNzg3v2FrHB2hK77Cc4M7V1Pm_-nWBHxYxVNopVhrd80Y4-2c
+    method: GET
+    uri: https://[::1]:35357/v3/projects/service
+  response:
+    body:
+      encoding: null
+      string: |-
+        {
+          "error": {
+            "code": 404,
+            "title": "Not Found",
+            "message": "Could not find project: service"
+          }
+        }
+    headers:
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '93'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 May 2017 07:49:53 GMT
+      Keep-Alive:
+      - timeout=3, max=99
+      Server:
+      - Apache/2.4.18 (Ubuntu)
+      Strict-Transport-Security:
+      - max-age=15768000
+      Vary:
+      - X-Auth-Token
+      X-Distribution:
+      - Ubuntu
+      x-openstack-request-id:
+      - req-6107025c-e09e-437a-90c2-61a559154d32
+    status:
+      code: 404
+      message: Not Found
+    url: https://[::1]:35357/v3/projects/service
+- recorded_at: '2017-05-15T07:49:53'
+  request:
+    body:
+      encoding: utf-8
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-keystoneclient
+      X-Auth-Token:
+      - gAAAAABZGV2gZwV0SlycA_OIohX7kRAmTp84SnzsAYD5Uhey7RTzCf0NvxNRxLk5RsjRSMncSdro7eWgtMrSblZJCPl485IvHANL3E3gsxFJP9TjebqDiF4DtGhQmc4mHPB3kOBNzg3v2FrHB2hK77Cc4M7V1Pm_-nWBHxYxVNopVhrd80Y4-2c
+    method: GET
+    uri: https://[::1]:35357/v3/projects?name=service
+  response:
+    body:
+      encoding: null
+      string: |-
+        {
+          "projects": [
+            {
+              "enabled": true,
+              "id": "147cc0a9263c4964926f3ee7b6ba3685",
+              "domain_id": "default",
+              "parent_id": "default",
+              "is_domain": false,
+              "name": "service",
+              "links": {
+                "self": "https://[::1]:5000/v3/projects/147cc0a9263c4964926f3ee7b6ba3685"
+              },
+              "description": "Tenant for the openstack service"
+            }
+          ],
+          "links": {
+            "self": "https://[::1]:5000/v3/projects?name=service",
+            "next": null,
+            "previous": null
+          }
+        }
+    headers:
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '440'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 May 2017 07:49:53 GMT
+      Keep-Alive:
+      - timeout=3, max=98
+      Server:
+      - Apache/2.4.18 (Ubuntu)
+      Strict-Transport-Security:
+      - max-age=15768000
+      Vary:
+      - X-Auth-Token
+      X-Distribution:
+      - Ubuntu
+      x-openstack-request-id:
+      - req-1915b2be-f116-4831-a7c3-5ba0a32d416f
+    status:
+      code: 200
+      message: OK
+    url: https://[::1]:35357/v3/projects?name=service
+- recorded_at: '2017-05-15T07:49:53'
+  request:
+    body:
+      encoding: utf-8
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-keystoneclient
+      X-Auth-Token:
+      - gAAAAABZGV2gZwV0SlycA_OIohX7kRAmTp84SnzsAYD5Uhey7RTzCf0NvxNRxLk5RsjRSMncSdro7eWgtMrSblZJCPl485IvHANL3E3gsxFJP9TjebqDiF4DtGhQmc4mHPB3kOBNzg3v2FrHB2hK77Cc4M7V1Pm_-nWBHxYxVNopVhrd80Y4-2c
+    method: GET
+    uri: https://[::1]:35357/v3/projects/gnocchi
+  response:
+    body:
+      encoding: null
+      string: |-
+        {
+          "error": {
+            "code": 404,
+            "title": "Not Found",
+            "message": "Could not find project: gnocchi"
+          }
+        }
+    headers:
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '92'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 May 2017 07:49:53 GMT
+      Keep-Alive:
+      - timeout=3, max=97
+      Server:
+      - Apache/2.4.18 (Ubuntu)
+      Strict-Transport-Security:
+      - max-age=15768000
+      Vary:
+      - X-Auth-Token
+      X-Distribution:
+      - Ubuntu
+      x-openstack-request-id:
+      - req-b23e72d3-742e-4e10-b9a7-d1161f1eeab4
+    status:
+      code: 404
+      message: Not Found
+    url: https://[::1]:35357/v3/projects/gnocchi
+- recorded_at: '2017-05-15T07:49:53'
+  request:
+    body:
+      encoding: utf-8
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-keystoneclient
+      X-Auth-Token:
+      - gAAAAABZGV2gZwV0SlycA_OIohX7kRAmTp84SnzsAYD5Uhey7RTzCf0NvxNRxLk5RsjRSMncSdro7eWgtMrSblZJCPl485IvHANL3E3gsxFJP9TjebqDiF4DtGhQmc4mHPB3kOBNzg3v2FrHB2hK77Cc4M7V1Pm_-nWBHxYxVNopVhrd80Y4-2c
+    method: GET
+    uri: https://[::1]:35357/v3/projects?name=gnocchi
+  response:
+    body:
+      encoding: null
+      string: |-
+        {
+          "projects": [],
+          "links": {
+            "self": "https://[::1]:5000/v3/projects?name=gnocchi",
+            "next": null,
+            "previous": null
+          }
+        }
+    headers:
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '134'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 May 2017 07:49:53 GMT
+      Keep-Alive:
+      - timeout=3, max=96
+      Server:
+      - Apache/2.4.18 (Ubuntu)
+      Strict-Transport-Security:
+      - max-age=15768000
+      Vary:
+      - X-Auth-Token
+      X-Distribution:
+      - Ubuntu
+      x-openstack-request-id:
+      - req-fdeed726-18a4-4e73-bf8d-d24a5b56246e
+    status:
+      code: 200
+      message: OK
+    url: https://[::1]:35357/v3/projects?name=gnocchi
+recorded_with: betamax/0.8.0
