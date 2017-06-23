@@ -297,7 +297,7 @@ http_interactions:
       X-Auth-Token:
       - gAAAAABZGV2gZwV0SlycA_OIohX7kRAmTp84SnzsAYD5Uhey7RTzCf0NvxNRxLk5RsjRSMncSdro7eWgtMrSblZJCPl485IvHANL3E3gsxFJP9TjebqDiF4DtGhQmc4mHPB3kOBNzg3v2FrHB2hK77Cc4M7V1Pm_-nWBHxYxVNopVhrd80Y4-2c
     method: GET
-    uri: https://[::1]:35357/v3/projects/services
+    uri: https://[::1]:35357/v3/projects/service
   response:
     body:
       encoding: null
@@ -306,7 +306,7 @@ http_interactions:
           "error": {
             "code": 404,
             "title": "Not Found",
-            "message": "Could not find project: services"
+            "message": "Could not find project: service"
           }
         }
     headers:
@@ -333,7 +333,7 @@ http_interactions:
     status:
       code: 404
       message: Not Found
-    url: https://[::1]:35357/v3/projects/services
+    url: https://[::1]:35357/v3/projects/service
 - recorded_at: '2017-05-15T07:49:53'
   request:
     body:
@@ -351,7 +351,7 @@ http_interactions:
       X-Auth-Token:
       - gAAAAABZGV2gZwV0SlycA_OIohX7kRAmTp84SnzsAYD5Uhey7RTzCf0NvxNRxLk5RsjRSMncSdro7eWgtMrSblZJCPl485IvHANL3E3gsxFJP9TjebqDiF4DtGhQmc4mHPB3kOBNzg3v2FrHB2hK77Cc4M7V1Pm_-nWBHxYxVNopVhrd80Y4-2c
     method: GET
-    uri: https://[::1]:35357/v3/projects?name=services
+    uri: https://[::1]:35357/v3/projects?name=service
   response:
     body:
       encoding: null
@@ -364,15 +364,15 @@ http_interactions:
               "domain_id": "default",
               "parent_id": "default",
               "is_domain": false,
-              "name": "services",
+              "name": "service",
               "links": {
                 "self": "https://[::1]:5000/v3/projects/147cc0a9263c4964926f3ee7b6ba3685"
               },
-              "description": "Tenant for the openstack services"
+              "description": "Tenant for the openstack service"
             }
           ],
           "links": {
-            "self": "https://[::1]:5000/v3/projects?name=services",
+            "self": "https://[::1]:5000/v3/projects?name=service",
             "next": null,
             "previous": null
           }
@@ -401,7 +401,7 @@ http_interactions:
     status:
       code: 200
       message: OK
-    url: https://[::1]:35357/v3/projects?name=services
+    url: https://[::1]:35357/v3/projects?name=service
 - recorded_at: '2017-05-15T07:49:53'
   request:
     body:

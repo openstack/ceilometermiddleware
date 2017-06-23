@@ -49,7 +49,7 @@ before "proxy-server" and add the following filter in the file:
     # ignore_projects option, here is just a example:
     auth_type = password
     auth_url = https://[::1]:5000
-    project_name = services
+    project_name = service
     project_domain_name = Default
     username = user
     user_domain_name = Default
@@ -150,7 +150,7 @@ class Swift(object):
     event_queue = None
     threadLock = threading.Lock()
 
-    DEFAULT_IGNORE_PROJECT_NAMES = ['services']
+    DEFAULT_IGNORE_PROJECT_NAMES = ['service']
 
     def __init__(self, app, conf):
         self._app = app

@@ -453,7 +453,7 @@ class TestSwift(tests_base.TestCase):
             'username': 'admin',
             'tenant_name': 'admin',
             'password': 'secret',
-            'ignore_projects': 'services,gnocchi',
+            'ignore_projects': 'service,gnocchi',
         })
         self.assertEqual(["147cc0a9263c4964926f3ee7b6ba3685"],
                          app.ignore_projects)
