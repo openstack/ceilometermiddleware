@@ -131,6 +131,11 @@ class InputProxy(object):
         self.bytes_received += len(line)
         return line
 
+    def close(self):
+        close_method = getattr(self.wsgi_input, 'close', None)
+        if callable(close_method):
+            close_method()
+
 
 class KeystoneClientLoader(ksa_adapter.Adapter):
     """Keystone client adapter loader.
@@ -272,6 +277,9 @@ class Swift(object):
                     except StopIteration:
                         chunk = ''
             finally:
+                close_method = getattr(iterable, 'close', None)
+                if callable(close_method):
+                    close_method()
                 self.emit_event(env, input_proxy.bytes_received, bytes_sent)
 
         try:
