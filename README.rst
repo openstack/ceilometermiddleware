@@ -8,7 +8,7 @@ data generation to be consumed by Ceilometer.
 For information on contributing, see ``CONTRIBUTING.rst``.
 
 * License: Apache License, Version 2.0
-* Documentation: http://docs.openstack.org/developer/ceilometermiddleware
+* Documentation: https://docs.openstack.org/ceilometermiddleware/latest/
 * Source: http://git.openstack.org/cgit/openstack/ceilometermiddleware
 * Bugs: http://bugs.launchpad.net/ceilometermiddleware
 
