@@ -11,6 +11,7 @@ For information on contributing, see ``CONTRIBUTING.rst``.
 * Documentation: https://docs.openstack.org/ceilometermiddleware/latest/
 * Source: http://git.openstack.org/cgit/openstack/ceilometermiddleware
 * Bugs: http://bugs.launchpad.net/ceilometermiddleware
+* Release notes: https://docs.openstack.org/releasenotes/ceilometermiddleware/
 
 For any other information, refer to the parent project, Ceilometer:
 
