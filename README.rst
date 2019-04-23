@@ -9,9 +9,9 @@ For information on contributing, see ``CONTRIBUTING.rst``.
 
 * License: Apache License, Version 2.0
 * Documentation: https://docs.openstack.org/ceilometermiddleware/latest/
-* Source: http://git.openstack.org/cgit/openstack/ceilometermiddleware
+* Source: http://opendev.org/openstack/ceilometermiddleware
 * Bugs: http://bugs.launchpad.net/ceilometermiddleware
 
 For any other information, refer to the parent project, Ceilometer:
 
-    https://github.com/openstack/ceilometer
+    https://opendev.org/openstack/ceilometer
