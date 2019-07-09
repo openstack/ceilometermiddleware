@@ -267,7 +267,10 @@ class Swift(object):
                 while chunk:
                     bytes_sent += len(chunk)
                     yield chunk
-                    chunk = next(iterator)
+                    try:
+                        chunk = next(iterator)
+                    except StopIteration:
+                        chunk = ''
             finally:
                 self.emit_event(env, input_proxy.bytes_received, bytes_sent)
 
