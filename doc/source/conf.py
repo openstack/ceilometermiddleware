@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 extensions = [
     'sphinx.ext.autodoc',
     #'sphinx.ext.intersphinx',
-    'oslosphinx'
+    'openstackdocstheme'
 ]
 
 # autodoc generation is a bit aggressive and a nuisance when doing heavy
@@ -58,6 +58,8 @@ pygments_style = 'sphinx'
 # html_theme = '_theme'
 # html_static_path = ['static']
 
+html_theme = 'openstackdocs'
+
 # Output file base name for HTML help builder.
 htmlhelp_basename = '%sdoc' % project
 
@@ -73,3 +75,7 @@ latex_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 #intersphinx_mapping = {'http://docs.python.org/': None}
+
+# openstackdocstheme options
+repository_name = 'openstack/ceilometermiddleware'
+bug_project = 'http://bugs.launchpad.net/ceilometermiddleware'
