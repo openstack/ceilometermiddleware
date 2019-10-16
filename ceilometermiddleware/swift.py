@@ -295,7 +295,8 @@ class Swift(object):
         if ((env.get('HTTP_X_SERVICE_PROJECT_ID') or
                 env.get('HTTP_X_PROJECT_ID') or
                 env.get('HTTP_X_TENANT_ID')) in self.ignore_projects or
-                env.get('swift.source') is not None):
+                (env.get('swift.source') is not None and
+                    env.get('swift.source') != 'S3')):
             return
 
         path = urlparse.quote(env['PATH_INFO'])
@@ -345,9 +346,14 @@ class Swift(object):
                     header.upper())
 
         # build object store details
-        target = cadf_resource.Resource(
-            typeURI='service/storage/object',
-            id=account.partition(self.reseller_prefix)[2] or path)
+        if self.reseller_prefix:
+            target = cadf_resource.Resource(
+                typeURI='service/storage/object',
+                id=account.partition(self.reseller_prefix)[2] or path)
+        else:
+            target = cadf_resource.Resource(
+                typeURI='service/storage/object',
+                id=account)
         target.metadata = resource_metadata
         target.action = method.lower()
 
