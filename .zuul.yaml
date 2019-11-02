@@ -1,7 +1,18 @@
+- job:
+    name: ceilometermiddleware-integration
+    parent: telemetry-dsvm-integration
+    required-projects:
+      - openstack/ceilometermiddleware
+
 - project:
     templates:
       - openstack-python-jobs
       - openstack-python35-jobs
       - publish-openstack-sphinx-docs
       - release-notes-jobs
-      - lib-forward-testing-plugin
+    check:
+      jobs:
+        - ceilometermiddleware-integration
+    gate:
+      jobs:
+        - ceilometermiddleware-integration
