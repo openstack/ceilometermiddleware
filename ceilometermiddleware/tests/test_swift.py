@@ -72,10 +72,13 @@ class TestSwift(tests_base.TestCase):
     def start_response(*args):
             pass
 
+    def get_request(self, path, environ=None, headers=None):
+        return FakeRequest(path, environ=environ, headers=headers)
+
     def test_get(self):
         app = swift.Swift(FakeApp(), {})
-        req = FakeRequest('/1.0/account/container/obj',
-                          environ={'REQUEST_METHOD': 'GET'})
+        req = self.get_request('/1.0/account/container/obj',
+                               environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             resp = app(req.environ, self.start_response)
             self.assertEqual(["This string is 28 bytes long"], list(resp))
@@ -96,8 +99,8 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(),
                           {"nonblocking_notify": "True",
                            "send_queue_size": "1"})
-        req = FakeRequest('/1.0/account/container/obj',
-                          environ={'REQUEST_METHOD': 'GET'})
+        req = self.get_request('/1.0/account/container/obj',
+                               environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info',
                         side_effect=lambda *args, **kwargs: notified.set()
                         ) as notify:
@@ -118,7 +121,7 @@ class TestSwift(tests_base.TestCase):
 
     def test_put(self):
         app = swift.Swift(FakeApp(body=['']), {})
-        req = FakeRequest(
+        req = self.get_request(
             '/1.0/account/container/obj',
             environ={'REQUEST_METHOD': 'PUT',
                      'wsgi.input':
@@ -139,7 +142,7 @@ class TestSwift(tests_base.TestCase):
 
     def test_post(self):
         app = swift.Swift(FakeApp(body=['']), {})
-        req = FakeRequest(
+        req = self.get_request(
             '/1.0/account/container/obj',
             environ={'REQUEST_METHOD': 'POST',
                      'wsgi.input': six.moves.cStringIO('some other stuff')})
@@ -159,8 +162,8 @@ class TestSwift(tests_base.TestCase):
 
     def test_head(self):
         app = swift.Swift(FakeApp(body=['']), {})
-        req = FakeRequest('/1.0/account/container/obj',
-                          environ={'REQUEST_METHOD': 'HEAD'})
+        req = self.get_request('/1.0/account/container/obj',
+                               environ={'REQUEST_METHOD': 'HEAD'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -176,8 +179,8 @@ class TestSwift(tests_base.TestCase):
     def test_bogus_request(self):
         """Test even for arbitrary request method, this will still work."""
         app = swift.Swift(FakeApp(body=['']), {})
-        req = FakeRequest('/1.0/account/container/obj',
-                          environ={'REQUEST_METHOD': 'BOGUS'})
+        req = self.get_request('/1.0/account/container/obj',
+                               environ={'REQUEST_METHOD': 'BOGUS'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -192,8 +195,8 @@ class TestSwift(tests_base.TestCase):
 
     def test_get_container(self):
         app = swift.Swift(FakeApp(), {})
-        req = FakeRequest('/1.0/account/container',
-                          environ={'REQUEST_METHOD': 'GET'})
+        req = self.get_request('/1.0/account/container',
+                               environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -210,8 +213,8 @@ class TestSwift(tests_base.TestCase):
 
     def test_no_metadata_headers(self):
         app = swift.Swift(FakeApp(), {})
-        req = FakeRequest('/1.0/account/container',
-                          environ={'REQUEST_METHOD': 'GET'})
+        req = self.get_request('/1.0/account/container',
+                               environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -230,11 +233,11 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {
             'metadata_headers': 'X_VAR1, x-var2, x-var3, token'
         })
-        req = FakeRequest('/1.0/account/container',
-                          environ={'REQUEST_METHOD': 'GET'},
-                          headers={'X_VAR1': 'value1',
-                                   'X_VAR2': 'value2',
-                                   'TOKEN': 'token'})
+        req = self.get_request('/1.0/account/container',
+                               environ={'REQUEST_METHOD': 'GET'},
+                               headers={'X_VAR1': 'value1',
+                                        'X_VAR2': 'value2',
+                                        'TOKEN': 'token'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -258,9 +261,9 @@ class TestSwift(tests_base.TestCase):
             'metadata_headers': 'unicode'
         })
         uni = u'\xef\xbd\xa1\xef\xbd\xa5'
-        req = FakeRequest('/1.0/account/container',
-                          environ={'REQUEST_METHOD': 'GET'},
-                          headers={'UNICODE': uni})
+        req = self.get_request('/1.0/account/container',
+                               environ={'REQUEST_METHOD': 'GET'},
+                               headers={'UNICODE': uni})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -281,8 +284,8 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {
             'metadata_headers': 'x-var3'
         })
-        req = FakeRequest('/1.0/account/container',
-                          environ={'REQUEST_METHOD': 'GET'})
+        req = self.get_request('/1.0/account/container',
+                               environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -316,8 +319,8 @@ class TestSwift(tests_base.TestCase):
     def test_emit_event_fail(self, mocked_func):
         mocked_func.side_effect = Exception("a exception")
         app = swift.Swift(FakeApp(body=["test"]), {})
-        req = FakeRequest('/1.0/account/container',
-                          environ={'REQUEST_METHOD': 'GET'})
+        req = self.get_request('/1.0/account/container',
+                               environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             resp = list(app(req.environ, self.start_response))
             self.assertEqual(0, len(notify.call_args_list))
@@ -325,8 +328,8 @@ class TestSwift(tests_base.TestCase):
 
     def test_reseller_prefix(self):
         app = swift.Swift(FakeApp(), {})
-        req = FakeRequest('/1.0/AUTH_account/container/obj',
-                          environ={'REQUEST_METHOD': 'GET'})
+        req = self.get_request('/1.0/AUTH_account/container/obj',
+                               environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -459,3 +462,14 @@ class TestSwift(tests_base.TestCase):
                          app.ignore_projects)
         warning.assert_called_once_with(
             "fail to find project '%s' in keystone", "gnocchi")
+
+
+class TestSwiftS3Api(TestSwift):
+
+    def get_request(self, path, environ=None, headers=None):
+        # Add Swift Path in environ, provided by swift s3api middleware
+        environ['swift.backend_path'] = path
+        # Emulate S3 api PATH_INFO by removing /v1 and account parts
+        path = '/' + path.split('/', 3)[-1]
+
+        return FakeRequest(path, environ=environ, headers=headers)
