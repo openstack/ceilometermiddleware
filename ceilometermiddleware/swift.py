@@ -292,10 +292,11 @@ class Swift(object):
 
     @_log_and_ignore_error
     def emit_event(self, env, bytes_received, bytes_sent, outcome='success'):
-        if ((env.get('HTTP_X_SERVICE_PROJECT_ID') or
-                env.get('HTTP_X_PROJECT_ID') or
-                env.get('HTTP_X_TENANT_ID')) in self.ignore_projects or
-                env.get('swift.source') is not None):
+        if (
+                (env.get('HTTP_X_SERVICE_PROJECT_ID')
+                 or env.get('HTTP_X_PROJECT_ID')
+                 or env.get('HTTP_X_TENANT_ID')) in self.ignore_projects
+                or env.get('swift.source') is not None):
             return
 
         path = urlparse.quote(env.get('swift.backend_path', env['PATH_INFO']))
@@ -355,8 +356,8 @@ class Swift(object):
         initiator = cadf_resource.Resource(
             typeURI='service/security/account/user',
             id=env.get('HTTP_X_USER_ID'))
-        initiator.project_id = (env.get('HTTP_X_PROJECT_ID') or
-                                env.get('HTTP_X_TENANT_ID'))
+        initiator.project_id = (env.get('HTTP_X_PROJECT_ID')
+                                or env.get('HTTP_X_TENANT_ID'))
 
         # build notification body
         event = cadf_event.Event(eventTime=now, outcome=outcome,

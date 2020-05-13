@@ -70,7 +70,7 @@ class TestSwift(tests_base.TestCase):
 
     @staticmethod
     def start_response(*args):
-            pass
+        pass
 
     def get_request(self, path, environ=None, headers=None):
         return FakeRequest(path, environ=environ, headers=headers)
