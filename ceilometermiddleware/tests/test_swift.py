@@ -12,11 +12,11 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+from io import StringIO
 import threading
 from unittest import mock
 
 from oslo_config import cfg
-import six
 
 from ceilometermiddleware import swift
 from ceilometermiddleware.tests import base as tests_base
@@ -53,9 +53,9 @@ class FakeRequest(object):
         environ['PATH_INFO'] = path
 
         if 'wsgi.input' not in environ:
-            environ['wsgi.input'] = six.moves.cStringIO('')
+            environ['wsgi.input'] = StringIO('')
 
-        for header, value in six.iteritems(headers):
+        for header, value in headers.items():
             environ['HTTP_%s' % header.upper()] = value
         self.environ = environ
 
@@ -125,7 +125,7 @@ class TestSwift(tests_base.TestCase):
             '/1.0/account/container/obj',
             environ={'REQUEST_METHOD': 'PUT',
                      'wsgi.input':
-                     six.moves.cStringIO('some stuff')})
+                     StringIO('some stuff')})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -145,7 +145,7 @@ class TestSwift(tests_base.TestCase):
         req = self.get_request(
             '/1.0/account/container/obj',
             environ={'REQUEST_METHOD': 'POST',
-                     'wsgi.input': six.moves.cStringIO('some other stuff')})
+                     'wsgi.input': StringIO('some other stuff')})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
             self.assertEqual(1, len(notify.call_args_list))
@@ -277,7 +277,7 @@ class TestSwift(tests_base.TestCase):
             http_headers = [k for k in metadata.keys()
                             if k.startswith('http_header_')]
             self.assertEqual(1, len(http_headers))
-            self.assertEqual(six.text_type(uni),
+            self.assertEqual(str(uni),
                              metadata['http_header_unicode'])
 
     def test_metadata_headers_on_not_existing_header(self):
@@ -315,7 +315,7 @@ class TestSwift(tests_base.TestCase):
             list(app(req.environ, self.start_response))
             self.assertEqual(0, len(notify.call_args_list))
 
-    @mock.patch('six.moves.urllib.parse.quote')
+    @mock.patch('urllib.parse.quote')
     def test_emit_event_fail(self, mocked_func):
         mocked_func.side_effect = Exception("a exception")
         app = swift.Swift(FakeApp(body=["test"]), {})
@@ -429,7 +429,7 @@ class TestSwift(tests_base.TestCase):
             '/1.0/account/container/obj',
             environ={'REQUEST_METHOD': 'PUT',
                      'wsgi.input':
-                     six.moves.cStringIO('some stuff'),
+                     StringIO('some stuff'),
                      'swift.source': 'RL'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
