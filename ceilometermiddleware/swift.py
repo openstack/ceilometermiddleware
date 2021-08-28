@@ -73,11 +73,9 @@ from pycadf.helper import api
 from pycadf import measurement as cadf_measurement
 from pycadf import metric as cadf_metric
 from pycadf import resource as cadf_resource
-import six
-import six.moves.queue as queue
-import six.moves.urllib.parse as urlparse
+import queue
 import threading
-
+import urllib.parse as urlparse
 
 LOG = logging.getLogger(__name__)
 
@@ -241,7 +239,7 @@ class Swift(object):
             return [client.projects.get(name_or_id)]
         except ksa_exc.NotFound:
             pass
-        if isinstance(name_or_id, six.binary_type):
+        if isinstance(name_or_id, bytes):
             name_or_id = name_or_id.decode('utf-8', 'strict')
         projects = client.projects.list(name=name_or_id)
         if not projects:
@@ -305,8 +303,8 @@ class Swift(object):
         for header in env:
             if header.startswith('HTTP_') and env[header]:
                 key = header[5:]
-                if isinstance(env[header], six.text_type):
-                    headers[key] = six.text_type(env[header])
+                if isinstance(env[header], str):
+                    headers[key] = str(env[header])
                 else:
                     headers[key] = str(env[header])
 
