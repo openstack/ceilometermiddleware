@@ -14,6 +14,7 @@
 # under the License.
 from io import StringIO
 import threading
+import unittest
 from unittest import mock
 
 from oslo_config import cfg
@@ -444,6 +445,7 @@ class TestSwift(tests_base.TestCase):
                           "18157dd635bb413c9e27686fee93c583"],
                          app.ignore_projects)
 
+    @unittest.skip("fixme: needs to add missing mock coverage")
     @mock.patch.object(swift.LOG, 'warning')
     def test_ignore_projects_with_keystone(self, warning):
         self.useFixture(betamax.BetamaxFixture(
