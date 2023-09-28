@@ -3,6 +3,9 @@
     parent: telemetry-dsvm-integration
     required-projects:
       - openstack/ceilometermiddleware
+    vars:
+      devstack_localrc:
+        GLOBAL_VENV: False
 
 - project:
     templates:
