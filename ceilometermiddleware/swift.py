@@ -160,10 +160,24 @@ class Swift(object):
 
         self.ignore_projects = self._get_ignore_projects(conf)
 
+        extra_config_files = conf.get('extra_config_files')
+        if extra_config_files is not None:
+            extra_config_files = list_from_csv(extra_config_files)
+
+        extra_config_dirs = conf.get('extra_config_dirs')
+        if extra_config_dirs is not None:
+            extra_config_dirs = list_from_csv(extra_config_dirs)
+
+        oslo_conf = cfg.ConfigOpts()
+        oslo_conf([], project='swift',
+                  default_config_files=extra_config_files,
+                  default_config_dirs=extra_config_dirs,
+                  validate_default_values=True)
+
         oslo_messaging.set_transport_defaults(conf.get('control_exchange',
                                                        'swift'))
         self._notifier = oslo_messaging.Notifier(
-            oslo_messaging.get_notification_transport(cfg.CONF,
+            oslo_messaging.get_notification_transport(oslo_conf,
                                                       url=conf.get('url')),
             publisher_id='ceilometermiddleware',
             driver=conf.get('driver', 'messagingv2'),
