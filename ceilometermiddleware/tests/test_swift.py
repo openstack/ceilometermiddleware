@@ -255,7 +255,7 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual('value1', metadata['http_header_x_var1'])
             self.assertEqual('value2', metadata['http_header_x_var2'])
             self.assertEqual('token', metadata['http_header_token'])
-            self.assertFalse('http_header_x_var3' in metadata)
+            self.assertNotIn('http_header_x_var3', metadata)
 
     def test_metadata_headers_unicode(self):
         app = swift.Swift(FakeApp(), {
