@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    The ceilometer middleware now supports loading additional config files to
+    look up oslo.messaging library options. Set the ``extra_config_files``
+    parameter or the ``extra_config_dirs`` parameter in the ceilometer
+    middleware section in the swift proxy server config file.
