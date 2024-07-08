@@ -317,10 +317,7 @@ class Swift(object):
         for header in env:
             if header.startswith('HTTP_') and env[header]:
                 key = header[5:]
-                if isinstance(env[header], str):
-                    headers[key] = str(env[header])
-                else:
-                    headers[key] = str(env[header])
+                headers[key] = str(env[header])
 
         try:
             container = obj = None
