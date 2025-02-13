@@ -337,9 +337,19 @@ class TestSwift(tests_base.TestCase):
             data = notify.call_args_list[0][0]
             self.assertEqual("account", data[2]['target']['id'])
 
-    def test_custom_prefix(self):
+    def test_custom_reseller_prefix(self):
         app = swift.Swift(FakeApp(), {'reseller_prefix': 'CUSTOM_'})
         req = FakeRequest('/1.0/CUSTOM_account/container/obj',
+                          environ={'REQUEST_METHOD': 'GET'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            self.assertEqual(1, len(notify.call_args_list))
+            data = notify.call_args_list[0][0]
+            self.assertEqual("account", data[2]['target']['id'])
+
+    def test_empty_reseller_prefix(self):
+        app = swift.Swift(FakeApp(), {'reseller_prefix': ''})
+        req = FakeRequest('/1.0/account/container/obj',
                           environ={'REQUEST_METHOD': 'GET'})
         with mock.patch('oslo_messaging.Notifier.info') as notify:
             list(app(req.environ, self.start_response))
@@ -397,7 +407,7 @@ class TestSwift(tests_base.TestCase):
                 list(app(req.environ, self.start_response))
                 self.assertEqual(calls, len(notify.call_args_list))
 
-    def test_empty_reseller_prefix(self):
+    def test_only_reseller_prefix(self):
         app = swift.Swift(
             FakeApp(), {'reseller_prefix': 'CUSTOM'})
         req = FakeRequest('/1.0/CUSTOM/container/obj',
