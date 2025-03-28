@@ -59,3 +59,6 @@ target/
 
 # Files created by releasenotes build
 releasenotes/build
+
+# Files created by oslo-config-generator
+etc/swift/ceilometer.conf
