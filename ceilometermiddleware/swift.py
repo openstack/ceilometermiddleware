@@ -100,7 +100,7 @@ def _log_and_ignore_error(fn):
     return wrapper
 
 
-class InputProxy(object):
+class InputProxy:
     """File-like object that counts bytes read.
 
     To be swapped in for wsgi.input for accounting purposes.
@@ -147,7 +147,7 @@ class KeystoneClientLoader(ksa_adapter.Adapter):
         return ks_client.Client
 
 
-class Swift(object):
+class Swift:
     """Swift middleware used for counting requests."""
 
     event_queue = None
@@ -412,7 +412,7 @@ class Swift(object):
 class SendEventThread(threading.Thread):
 
     def __init__(self, notifier):
-        super(SendEventThread, self).__init__()
+        super().__init__()
         self.notifier = notifier
 
     def run(self):
