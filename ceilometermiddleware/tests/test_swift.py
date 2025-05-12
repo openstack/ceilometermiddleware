@@ -24,7 +24,7 @@ from ceilometermiddleware.tests import base as tests_base
 from keystoneauth1.fixture import keystoneauth_betamax as betamax
 
 
-class FakeApp(object):
+class FakeApp:
     def __init__(self, body=None):
         self.body = body or ['This string is 28 bytes long']
 
@@ -36,11 +36,10 @@ class FakeApp(object):
         ])
         while env['wsgi.input'].read(5):
             pass
-        for line in self.body:
-            yield line
+        yield from self.body
 
 
-class FakeRequest(object):
+class FakeRequest:
     """A bare bones request object
 
     The middleware will inspect this for request method,
@@ -65,7 +64,7 @@ class FakeRequest(object):
 class TestSwift(tests_base.TestCase):
 
     def setUp(self):
-        super(TestSwift, self).setUp()
+        super().setUp()
         cfg.CONF([], project='ceilometermiddleware')
         self.addCleanup(cfg.CONF.reset)
 
@@ -261,7 +260,7 @@ class TestSwift(tests_base.TestCase):
         app = swift.Swift(FakeApp(), {
             'metadata_headers': 'unicode'
         })
-        uni = u'\xef\xbd\xa1\xef\xbd\xa5'
+        uni = '\xef\xbd\xa1\xef\xbd\xa5'
         req = self.get_request('/1.0/account/container',
                                environ={'REQUEST_METHOD': 'GET'},
                                headers={'UNICODE': uni})
