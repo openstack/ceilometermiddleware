@@ -1,3 +1,38 @@
 [build-system]
 requires = ["pbr>=6.0.0", "setuptools>=64.0.0"]
 build-backend = "pbr.build"
+
+[project]
+name = "ceilometermiddleware"
+description = "OpenStack Telemetry middleware for generating metrics"
+readme = "README.rst"
+authors = [
+    {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
+]
+requires-python = ">=3.10"
+dynamic = ["version", "dependencies"]
+classifiers = [
+    "Environment :: OpenStack",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://docs.openstack.org/ceilometermiddleware"
+Repository = "https://opendev.org/openstack/ceilometermiddleware"
+
+[project.entry-points."paste.filter_factory"]
+"swift" = "ceilometermiddleware.swift:filter_factory"
+
+[tool.setuptools]
+packages = ["ceilometermiddleware"]
