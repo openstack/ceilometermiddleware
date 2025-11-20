@@ -2,6 +2,8 @@
 Middleware for OpenStack Telemetry (Ceilometer)
 ===============================================
 
+.. image:: https://governance.openstack.org/tc/badges/ceilometermiddleware.svg
+
 This library provides middleware modules designed to enable metric and event
 data generation to be consumed by Ceilometer.
 
