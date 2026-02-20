@@ -56,7 +56,6 @@ before "proxy-server" and add the following filter in the file:
     password = a_big_secret
     interface = public
 """
-import datetime
 import functools
 import logging
 
@@ -68,6 +67,7 @@ from keystoneclient.v3 import client as ks_client
 from oslo_config import cfg
 import oslo_messaging
 from oslo_utils import strutils
+from oslo_utils import timeutils
 from pycadf import event as cadf_event
 from pycadf.helper import api
 from pycadf import measurement as cadf_measurement
@@ -340,7 +340,7 @@ class Swift:
         except ValueError:
             return
 
-        now = datetime.datetime.utcnow().isoformat()
+        now = timeutils.utcnow().isoformat()
 
         resource_metadata = {
             "path": path,
