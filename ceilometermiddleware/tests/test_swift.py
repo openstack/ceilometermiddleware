@@ -75,6 +75,42 @@ class TestSwift(tests_base.TestCase):
     def get_request(self, path, environ=None, headers=None):
         return FakeRequest(path, environ=environ, headers=headers)
 
+    # ---- helpers for new storage.api.request metric ----
+
+    @staticmethod
+    def _measurements(payload):
+        return payload.get('measurements') or []
+
+    def _find_measurement(self, payload, metric_name):
+        for m in self._measurements(payload):
+            if m.get('metric', {}).get('name') == metric_name:
+                return m
+        self.fail(
+            "Missing measurement '{}'. Got: {}".format(
+                metric_name,
+                [
+                    mm.get('metric', {}).get('name')
+                    for mm in self._measurements(payload)
+                ]
+            )
+        )
+
+    def _assert_has_api_request(self, payload, result=1):
+        m = self._find_measurement(payload, 'storage.api.request')
+        self.assertEqual(result, m.get('result'))
+
+    def _assert_no_bytes_metrics(self, payload):
+        byte_metrics = {
+            'storage.objects.incoming.bytes',
+            'storage.objects.outgoing.bytes',
+        }
+        self.assertFalse(
+            any(m.get('metric', {}).get('name') in byte_metrics
+                for m in self._measurements(payload))
+        )
+
+    # ---- tests ----
+
     def test_get(self):
         app = swift.Swift(FakeApp(), {})
         req = self.get_request('/1.0/account/container/obj',
@@ -85,9 +121,15 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertEqual(28, data[2]['measurements'][0]['result'])
-            self.assertEqual('storage.objects.outgoing.bytes',
-                             data[2]['measurements'][0]['metric']['name'])
+
+            self._assert_has_api_request(data[2], result=1)
+
+            bytes_m = self._find_measurement(
+                data[2],
+                'storage.objects.outgoing.bytes',
+            )
+            self.assertEqual(28, bytes_m['result'])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -110,9 +152,15 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertEqual(28, data[2]['measurements'][0]['result'])
-            self.assertEqual('storage.objects.outgoing.bytes',
-                             data[2]['measurements'][0]['metric']['name'])
+
+            self._assert_has_api_request(data[2], result=1)
+
+            bytes_m = self._find_measurement(
+                data[2],
+                'storage.objects.outgoing.bytes',
+            )
+            self.assertEqual(28, bytes_m['result'])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -131,9 +179,15 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertEqual(10, data[2]['measurements'][0]['result'])
-            self.assertEqual('storage.objects.incoming.bytes',
-                             data[2]['measurements'][0]['metric']['name'])
+
+            self._assert_has_api_request(data[2], result=1)
+
+            bytes_m = self._find_measurement(
+                data[2],
+                'storage.objects.incoming.bytes',
+            )
+            self.assertEqual(10, bytes_m['result'])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -151,9 +205,15 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertEqual(16, data[2]['measurements'][0]['result'])
-            self.assertEqual('storage.objects.incoming.bytes',
-                             data[2]['measurements'][0]['metric']['name'])
+
+            self._assert_has_api_request(data[2], result=1)
+
+            bytes_m = self._find_measurement(
+                data[2],
+                'storage.objects.incoming.bytes',
+            )
+            self.assertEqual(16, bytes_m['result'])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -169,7 +229,11 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertIsNone(data[2].get('measurements'))
+
+            # request metric present, no bytes metrics
+            self._assert_has_api_request(data[2], result=1)
+            self._assert_no_bytes_metrics(data[2])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -186,7 +250,11 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertIsNone(data[2].get('measurements'))
+
+            # Bogus methods still count as an API request
+            self._assert_has_api_request(data[2], result=1)
+            self._assert_no_bytes_metrics(data[2])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -202,9 +270,15 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertEqual(28, data[2]['measurements'][0]['result'])
-            self.assertEqual('storage.objects.outgoing.bytes',
-                             data[2]['measurements'][0]['metric']['name'])
+
+            self._assert_has_api_request(data[2], result=1)
+
+            bytes_m = self._find_measurement(
+                data[2],
+                'storage.objects.outgoing.bytes',
+            )
+            self.assertEqual(28, bytes_m['result'])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -220,6 +294,9 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
+
+            self._assert_has_api_request(data[2], result=1)
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -243,6 +320,9 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
+
+            self._assert_has_api_request(data[2], result=1)
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -269,6 +349,9 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
+
+            self._assert_has_api_request(data[2], result=1)
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -291,6 +374,9 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
+
+            self._assert_has_api_request(data[2], result=1)
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertEqual('container', metadata['container'])
@@ -388,9 +474,9 @@ class TestSwift(tests_base.TestCase):
                 req = FakeRequest('/1.0/CUSTOM_account/container/obj',
                                   environ={'REQUEST_METHOD': 'GET',
                                            proj_attr: proj})
-            with mock.patch('oslo_messaging.Notifier.info') as notify:
-                list(app(req.environ, self.start_response))
-                self.assertEqual(calls, len(notify.call_args_list))
+                with mock.patch('oslo_messaging.Notifier.info') as notify:
+                    list(app(req.environ, self.start_response))
+                    self.assertEqual(calls, len(notify.call_args_list))
 
     def test_ignore_requests_from_multiple_projects(self):
         app = swift.Swift(FakeApp(), {'ignore_projects': 'skip_proj, ignore'})
@@ -402,9 +488,9 @@ class TestSwift(tests_base.TestCase):
                 req = FakeRequest('/1.0/CUSTOM_account/container/obj',
                                   environ={'REQUEST_METHOD': 'GET',
                                            proj_attr: proj})
-            with mock.patch('oslo_messaging.Notifier.info') as notify:
-                list(app(req.environ, self.start_response))
-                self.assertEqual(calls, len(notify.call_args_list))
+                with mock.patch('oslo_messaging.Notifier.info') as notify:
+                    list(app(req.environ, self.start_response))
+                    self.assertEqual(calls, len(notify.call_args_list))
 
     def test_only_reseller_prefix(self):
         app = swift.Swift(
@@ -425,7 +511,10 @@ class TestSwift(tests_base.TestCase):
             self.assertEqual(1, len(notify.call_args_list))
             data = notify.call_args_list[0][0]
             self.assertEqual('objectstore.http.request', data[1])
-            self.assertIsNone(data[2].get('measurements'))
+
+            self._assert_has_api_request(data[2], result=1)
+            self._assert_no_bytes_metrics(data[2])
+
             metadata = data[2]['target']['metadata']
             self.assertEqual('1.0', metadata['version'])
             self.assertIsNone(metadata['container'])
@@ -478,6 +567,7 @@ class TestSwift(tests_base.TestCase):
 class TestSwiftS3Api(TestSwift):
 
     def get_request(self, path, environ=None, headers=None):
+        environ = environ or {}
         # Add Swift Path in environ, provided by swift s3api middleware
         environ['swift.backend_path'] = path
         # Emulate S3 api PATH_INFO by removing /v1 and account parts

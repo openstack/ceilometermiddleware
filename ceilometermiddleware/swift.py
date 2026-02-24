@@ -379,6 +379,10 @@ class Swift:
                                  observer=cadf_resource.Resource(id='target'))
 
         # measurements
+        event.add_measurement(cadf_measurement.Measurement(
+            result=1,
+            metric=cadf_metric.Metric(
+                name='storage.api.request', unit='request')))
         if bytes_received:
             event.add_measurement(cadf_measurement.Measurement(
                 result=bytes_received,
