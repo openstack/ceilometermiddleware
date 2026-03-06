@@ -62,3 +62,7 @@ releasenotes/build
 
 # Files created by oslo-config-generator
 etc/swift/ceilometer.conf
+
+# Files used by AI agents for instructions, rules and project context
+# md is also used for docs, but we can ignore them since openstack uses rst
+*.md
