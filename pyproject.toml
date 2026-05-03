@@ -1,5 +1,5 @@
 [build-system]
-requires = ["pbr>=6.0.0", "setuptools>=64.0.0"]
+requires = ["pbr>=6.1.1"]
 build-backend = "pbr.build"
 
 [project]
@@ -10,12 +10,12 @@ authors = [
     {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
 ]
 requires-python = ">=3.10"
+license = "Apache-2.0"
 dynamic = ["version", "dependencies"]
 classifiers = [
     "Environment :: OpenStack",
     "Intended Audience :: Information Technology",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -34,5 +34,5 @@ Repository = "https://opendev.org/openstack/ceilometermiddleware"
 [project.entry-points."paste.filter_factory"]
 "swift" = "ceilometermiddleware.swift:filter_factory"
 
-[tool.setuptools]
-packages = ["ceilometermiddleware"]
+[tool.setuptools.packages.find]
+include = ["ceilometermiddleware"]
