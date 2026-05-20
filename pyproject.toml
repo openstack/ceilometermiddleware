@@ -35,4 +35,4 @@ Repository = "https://opendev.org/openstack/ceilometermiddleware"
 "swift" = "ceilometermiddleware.swift:filter_factory"
 
 [tool.setuptools.packages.find]
-include = ["ceilometermiddleware"]
+include = ["ceilometermiddleware*"]
