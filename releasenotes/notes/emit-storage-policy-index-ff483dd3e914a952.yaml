@@ -1,0 +1,35 @@
+---
+features:
+  - |
+    Notification events now include Swift storage policy metadata for
+    the request's container under ``target.metadata.policy_idx``,
+    ``target.metadata.policy_name``, and ``target.metadata.policy_type``.
+    ``policy_idx`` is a canonical decimal string (for example ``"0"``,
+    ``"2"``); ``policy_name`` and ``policy_type`` are read once at
+    startup from ``[storage-policy:N]`` sections in a swift
+    configuration file. A new ``swift_conf_file`` middleware option
+    (default ``/etc/swift/swift.conf``) points at that file and
+    accepts any path or filename, accommodating deployments that do
+    not use the conventional location.
+
+    The index is read from ``X-Backend-Storage-Policy-Index`` on the
+    request environ for object requests, and from the same header on
+    the response for container GET, HEAD, and PUT requests where the
+    container server includes it. When the configuration file is
+    readable but declares no policies, the middleware mirrors swift's
+    implicit ``Policy-0`` replication default. When the file is
+    missing or unparseable, only ``policy_idx`` is emitted; the
+    middleware logs once at init and continues. ``policy_name`` and
+    ``policy_type`` are always emitted together, or both withheld
+    when the index does not resolve to a known policy.
+
+    All three fields are omitted for account-level requests, container
+    POST and DELETE (which carry no policy header on the response),
+    pre-controller failures such as invalid-token 401s, and unparseable
+    values. For SLO and COPY the index reflects the container the
+    metered request acted on, not any segment or source containers
+    involved internally; requests routed by path-rewriting middleware
+    (like versioned writes) reflect the rewritten container. This lets
+    billing pipelines distinguish traffic by policy (for example
+    replication versus erasure coding) for usage metering and
+    per-policy request-count reporting.
