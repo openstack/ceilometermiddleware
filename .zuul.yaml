@@ -3,6 +3,16 @@
     parent: telemetry-dsvm-integration
     required-projects:
       - openstack/ceilometermiddleware
+    irrelevant-files:
+      - ^\.gitignore$
+      - ^\.gitreview$
+      - ^\.pre-commit-config\.yaml$
+      - ^test-requirements\.txt$
+      - ^setup.cfg$
+      - ^doc/.*$
+      - ^.*\.rst$
+      - ^releasenotes/.*$
+      - ^ceilometermiddleware/tests/.*$
 
 - project:
     templates:
