@@ -27,6 +27,10 @@ before "proxy-server" and add the following filter in the file:
     metadata_headers = X-TEST
     # Set reseller prefix (defaults to "AUTH_" if not set)
     reseller_prefix = AUTH_
+    # Path to the swift configuration file containing storage policy
+    # definitions. Used to enrich events with storage policy name and
+    # type; falls back to policy_idx alone if the file cannot be read.
+    swift_conf_file = /etc/swift/swift.conf
     # Set control_exchange to publish to.
     control_exchange = swift
     # Set transport url
@@ -56,6 +60,7 @@ before "proxy-server" and add the following filter in the file:
     password = a_big_secret
     interface = public
 """
+import configparser
 import functools
 import logging
 
@@ -78,6 +83,13 @@ import threading
 import urllib.parse as urlparse
 
 LOG = logging.getLogger(__name__)
+
+# Swift's implicit default when no storage policies are declared in
+# swift.conf. Mirrored here as constants to enrich policy_idx without
+# importing from the swift package.
+_LEGACY_POLICY_NAME = 'Policy-0'
+_DEFAULT_POLICY_TYPE = 'replication'
+_STORAGE_POLICY_SECTION_PREFIX = 'storage-policy:'
 
 
 def list_from_csv(comma_separated_str):
@@ -212,6 +224,9 @@ class Swift:
                 self.start_sender_thread()
             Swift.threadLock.release()
 
+        self._policies = self._load_storage_policies(
+            conf.get('swift_conf_file', '/etc/swift/swift.conf'))
+
     def _get_ignore_projects(self, conf):
         if 'auth_type' not in conf:
             LOG.info("'auth_type' is not set assuming ignore_projects are "
@@ -246,6 +261,111 @@ class Swift:
         for name_or_id in ignore_projects:
             projects.extend(self._get_keystone_projects(client, name_or_id))
         return projects
+
+    @staticmethod
+    def _load_storage_policies(path):
+        """Parse a swift configuration file into ``{idx: (name, type)}``.
+
+        Reads ``[storage-policy:N]`` sections; ``policy_type`` defaults
+        to ``replication`` when omitted, matching swift. When the file
+        is readable but declares no policies, the map is populated with
+        the implicit ``Policy-0`` default swift itself synthesizes in
+        that case. When the file is missing or unparseable the map is
+        empty and emitted events carry ``policy_idx`` alone.
+        """
+        # Python disallows section or option duplicates by default;
+        # strict=False mirrors swift's own storage policy parser.
+        parser = configparser.RawConfigParser(strict=False)
+        try:
+            with open(path) as fp:
+                parser.read_file(fp)
+        except FileNotFoundError:
+            LOG.info(
+                'Swift configuration file not found at %s; '
+                'policy_name and policy_type will be omitted '
+                'from events.', path)
+            return {}
+        except (OSError, configparser.Error) as e:
+            LOG.warning(
+                'Unable to parse swift configuration file %s: %s. '
+                'policy_name and policy_type will be omitted from '
+                'events.', path, e)
+            return {}
+
+        policies = {}
+        for section in parser.sections():
+            if not section.startswith(_STORAGE_POLICY_SECTION_PREFIX):
+                continue
+            try:
+                idx = int(section[len(_STORAGE_POLICY_SECTION_PREFIX):])
+            except ValueError:
+                continue
+            name = parser.get(section, 'name', fallback=None)
+            if not name:
+                continue
+            policy_type = parser.get(
+                section, 'policy_type', fallback=_DEFAULT_POLICY_TYPE)
+            policies[idx] = (name, policy_type)
+
+        if not policies:
+            # Match swift's implicit default when the config declares
+            # no storage policies.
+            LOG.debug(
+                '%s declares no storage policies; using the implicit '
+                'Policy-0 default.', path)
+            policies[0] = (_LEGACY_POLICY_NAME, _DEFAULT_POLICY_TYPE)
+        else:
+            LOG.debug('Loaded storage policies from %s: %s',
+                      path, sorted(policies))
+        return policies
+
+    @staticmethod
+    def _get_policy_idx(env, container, obj, resp_headers=None):
+        """Return the Swift storage policy index as a string, or None.
+
+        Sources consulted in order:
+
+        * ``env['HTTP_X_BACKEND_STORAGE_POLICY_INDEX']`` for object
+          requests. The proxy's object controller stamps this on
+          ``req.headers`` before backend dispatch. Container handlers do
+          not, so a client-supplied value there could be spoofed and is
+          ignored.
+        * ``X-Backend-Storage-Policy-Index`` on the response headers.
+          Swift's container server includes this on GET/HEAD/PUT
+          responses.
+
+        Returns None for account-level requests, container POST/DELETE
+        (which carry no policy header), pre-controller failures, and
+        unparseable values. For SLO and COPY the index reflects the
+        container the metered request acted on, not any segment or
+        source containers involved internally; requests routed by
+        path-rewriting middleware (like versioned writes) reflect the
+        rewritten container.
+        """
+        if not container:
+            return None
+
+        idx = None
+        # Only trust the env header for object requests; container
+        # handlers do not overwrite a client-supplied value.
+        if obj:
+            idx = env.get('HTTP_X_BACKEND_STORAGE_POLICY_INDEX') or None
+
+        if idx is None and resp_headers:
+            idx = next(
+                (v for k, v in resp_headers
+                 if v and k.lower() == 'x-backend-storage-policy-index'),
+                None)
+
+        if idx is None:
+            return None
+        try:
+            # Validate as an integer but emit as a canonical string so
+            # downstream consumers (ceilometer) parse a consistent type.
+            return str(int(idx))
+        except (TypeError, ValueError):
+            LOG.debug('Unparseable storage policy index %r', idx)
+            return None
 
     @staticmethod
     def _get_keystone_projects(client, name_or_id):
@@ -292,7 +412,10 @@ class Swift:
                 close_method = getattr(iterable, 'close', None)
                 if callable(close_method):
                     close_method()
-                self.emit_event(env, input_proxy.bytes_received, bytes_sent)
+                resp_headers = (start_response_args[0][1]
+                                if start_response_args[0] else None)
+                self.emit_event(env, input_proxy.bytes_received, bytes_sent,
+                                resp_headers=resp_headers)
 
         try:
             iterable = self._app(env, my_start_response)
@@ -303,7 +426,8 @@ class Swift:
             return iter_response(iterable)
 
     @_log_and_ignore_error
-    def emit_event(self, env, bytes_received, bytes_sent, outcome='success'):
+    def emit_event(self, env, bytes_received, bytes_sent, outcome='success',
+                   resp_headers=None):
         if (
                 (env.get('HTTP_X_SERVICE_PROJECT_ID')
                  or env.get('HTTP_X_PROJECT_ID')
@@ -348,6 +472,16 @@ class Swift:
             "container": container,
             "object": obj,
         }
+
+        policy_idx = self._get_policy_idx(
+            env, container, obj, resp_headers)
+        if policy_idx is not None:
+            resource_metadata["policy_idx"] = policy_idx
+            policy_info = self._policies.get(int(policy_idx))
+            if policy_info:
+                policy_name, policy_type = policy_info
+                resource_metadata["policy_name"] = policy_name
+                resource_metadata["policy_type"] = policy_type
 
         for header in self.metadata_headers:
             if header.upper() in headers:

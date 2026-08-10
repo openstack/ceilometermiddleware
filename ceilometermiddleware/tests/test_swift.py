@@ -13,6 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from io import StringIO
+import os
+import tempfile
 import threading
 import unittest
 from unittest import mock
@@ -33,6 +35,25 @@ class FakeApp:
         start_response('200 OK', [
             ('Content-Type', 'text/plain'),
             ('Content-Length', str(sum(map(len, self.body))))
+        ])
+        while env['wsgi.input'].read(5):
+            pass
+        yield from self.body
+
+
+class FakeAppWithHeaders(FakeApp):
+    """FakeApp variant that emits additional response headers."""
+
+    def __init__(self, extra_headers, body=None):
+        super().__init__(body=body)
+        self.extra_headers = extra_headers
+
+    def __call__(self, env, start_response):
+        yield
+        start_response('200 OK', [
+            ('Content-Type', 'text/plain'),
+            ('Content-Length', str(sum(map(len, self.body)))),
+            *self.extra_headers,
         ])
         while env['wsgi.input'].read(5):
             pass
@@ -385,6 +406,260 @@ class TestSwift(tests_base.TestCase):
             http_headers = [k for k in metadata.keys()
                             if k.startswith('http_header_')]
             self.assertEqual(0, len(http_headers))
+
+    def test_policy_idx_from_backend_header(self):
+        # Object requests carry the index on the WSGI env because Swift's
+        # object controller stamps X-Backend-Storage-Policy-Index onto
+        # req.headers before dispatching to the backend. The env header
+        # takes precedence over any value that might arrive on the
+        # response.
+        app = swift.Swift(
+            FakeAppWithHeaders([('X-Backend-Storage-Policy-Index', '9')]),
+            {})
+        req = self.get_request(
+            '/1.0/account/container/obj',
+            environ={'REQUEST_METHOD': 'GET',
+                     'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '2'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            self.assertEqual(1, len(notify.call_args_list))
+            metadata = notify.call_args_list[0][0][2]['target']['metadata']
+            self.assertEqual('2', metadata['policy_idx'])
+
+    def test_policy_idx_absent_on_account_request(self):
+        # No container in the path means nothing to look up, so the
+        # field is omitted regardless of any env header.
+        app = swift.Swift(FakeApp(), {})
+        req = self.get_request(
+            '/1.0/account',
+            environ={'REQUEST_METHOD': 'GET',
+                     'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '0'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            self.assertEqual(1, len(notify.call_args_list))
+            metadata = notify.call_args_list[0][0][2]['target']['metadata']
+            self.assertNotIn('policy_idx', metadata)
+
+    def test_policy_idx_ignores_unparseable_value(self):
+        app = swift.Swift(FakeApp(), {})
+        req = self.get_request(
+            '/1.0/account/container/obj',
+            environ={'REQUEST_METHOD': 'GET',
+                     'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': 'not-an-int'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            metadata = notify.call_args_list[0][0][2]['target']['metadata']
+            self.assertNotIn('policy_idx', metadata)
+
+    def test_policy_idx_from_response_header(self):
+        # Container GET/HEAD/PUT responses carry
+        # X-Backend-Storage-Policy-Index from the container server. That's
+        # the sole source for container-level requests.
+        app = swift.Swift(
+            FakeAppWithHeaders([('X-Backend-Storage-Policy-Index', '3')]),
+            {})
+        req = self.get_request('/1.0/account/container',
+                               environ={'REQUEST_METHOD': 'GET'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            metadata = notify.call_args_list[0][0][2]['target']['metadata']
+            self.assertEqual('3', metadata['policy_idx'])
+
+    def test_policy_idx_ignores_env_header_for_container_requests(self):
+        # Container handlers don't overwrite a client-supplied
+        # X-Backend-Storage-Policy-Index, so it could be spoofed. Ignore
+        # the env header when the request isn't for an object.
+        app = swift.Swift(FakeApp(), {})
+        req = self.get_request(
+            '/1.0/account/container',
+            environ={'REQUEST_METHOD': 'GET',
+                     'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '99'})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            metadata = notify.call_args_list[0][0][2]['target']['metadata']
+            self.assertNotIn('policy_idx', metadata)
+
+    def test_policy_idx_empty_env_header_falls_back_to_response(self):
+        # Empty env header is treated as absent; the response header
+        # takes over.
+        app = swift.Swift(
+            FakeAppWithHeaders([('X-Backend-Storage-Policy-Index', '4')]),
+            {})
+        req = self.get_request(
+            '/1.0/account/container/obj',
+            environ={'REQUEST_METHOD': 'GET',
+                     'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': ''})
+        with mock.patch('oslo_messaging.Notifier.info') as notify:
+            list(app(req.environ, self.start_response))
+            metadata = notify.call_args_list[0][0][2]['target']['metadata']
+            self.assertEqual('4', metadata['policy_idx'])
+
+    def _write_swift_conf(self, path, body):
+        with open(path, 'w') as fp:
+            fp.write(body)
+
+    def test_policy_name_and_type_emitted_from_swift_conf(self):
+        with tempfile.TemporaryDirectory() as swift_dir:
+            path = os.path.join(swift_dir, 'swift.conf')
+            self._write_swift_conf(path, (
+                '[storage-policy:0]\n'
+                'name = Policy-0\n'
+                '[storage-policy:1]\n'
+                'name = ec42\n'
+                'policy_type = erasure_coding\n'
+            ))
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '1'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('1', metadata['policy_idx'])
+                self.assertEqual('ec42', metadata['policy_name'])
+                self.assertEqual('erasure_coding', metadata['policy_type'])
+
+    def test_policy_type_defaults_to_replication(self):
+        # A [storage-policy:N] section without policy_type falls back to
+        # 'replication' the same way swift itself does.
+        with tempfile.TemporaryDirectory() as swift_dir:
+            path = os.path.join(swift_dir, 'swift.conf')
+            self._write_swift_conf(path, (
+                '[storage-policy:0]\n'
+                'name = Policy-0\n'
+            ))
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '0'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('Policy-0', metadata['policy_name'])
+                self.assertEqual('replication', metadata['policy_type'])
+
+    def test_policy_name_and_type_omitted_for_unknown_index(self):
+        # Index emitted but not in the parsed map -> only policy_idx.
+        with tempfile.TemporaryDirectory() as swift_dir:
+            path = os.path.join(swift_dir, 'swift.conf')
+            self._write_swift_conf(path, (
+                '[storage-policy:0]\n'
+                'name = Policy-0\n'
+            ))
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '99'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('99', metadata['policy_idx'])
+                self.assertNotIn('policy_name', metadata)
+                self.assertNotIn('policy_type', metadata)
+
+    def test_policy_synthesized_when_swift_conf_declares_none(self):
+        # File readable but no [storage-policy:N] sections; match
+        # swift's implicit Policy-0 default.
+        with tempfile.TemporaryDirectory() as swift_dir:
+            path = os.path.join(swift_dir, 'swift.conf')
+            self._write_swift_conf(path, (
+                '[swift-hash]\n'
+                'swift_hash_path_suffix = anything\n'
+            ))
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '0'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('0', metadata['policy_idx'])
+                self.assertEqual('Policy-0', metadata['policy_name'])
+                self.assertEqual('replication', metadata['policy_type'])
+
+    def test_policy_name_and_type_omitted_when_swift_conf_missing(self):
+        with tempfile.TemporaryDirectory() as swift_dir:
+            # Intentionally do not write a config file.
+            path = os.path.join(swift_dir, 'swift.conf')
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '0'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('0', metadata['policy_idx'])
+                self.assertNotIn('policy_name', metadata)
+                self.assertNotIn('policy_type', metadata)
+
+    def test_policy_name_and_type_omitted_when_swift_conf_malformed(self):
+        with tempfile.TemporaryDirectory() as swift_dir:
+            path = os.path.join(swift_dir, 'swift.conf')
+            self._write_swift_conf(path, 'not a valid ini [\n')
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '0'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('0', metadata['policy_idx'])
+                self.assertNotIn('policy_name', metadata)
+                self.assertNotIn('policy_type', metadata)
+
+    def test_policy_map_skips_malformed_sections(self):
+        # Silently skip sections with non-integer indexes or missing
+        # names; valid siblings still load. Swift itself would reject
+        # such a config, but this guards the middleware's fallback path
+        # against future refactors that might harden the parser.
+        with tempfile.TemporaryDirectory() as swift_dir:
+            path = os.path.join(swift_dir, 'swift.conf')
+            self._write_swift_conf(path, (
+                '[storage-policy:abc]\n'    # non-integer index
+                'name = bogus\n'
+                '[storage-policy:2]\n'      # missing name
+                '[storage-policy:1]\n'      # valid
+                'name = valid-policy\n'
+            ))
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '1'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('1', metadata['policy_idx'])
+                self.assertEqual('valid-policy', metadata['policy_name'])
+                self.assertEqual('replication', metadata['policy_type'])
+
+    def test_policy_map_from_non_standard_filename(self):
+        # swift_conf_file accepts any path; the filename does not have
+        # to be ``swift.conf``. Accommodates deployments that mount the
+        # config under a different name.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'storage-policies.conf')
+            self._write_swift_conf(path, (
+                '[storage-policy:0]\n'
+                'name = replicated\n'
+            ))
+            app = swift.Swift(FakeApp(), {'swift_conf_file': path})
+            req = self.get_request(
+                '/1.0/account/container/obj',
+                environ={'REQUEST_METHOD': 'GET',
+                         'HTTP_X_BACKEND_STORAGE_POLICY_INDEX': '0'})
+            with mock.patch('oslo_messaging.Notifier.info') as notify:
+                list(app(req.environ, self.start_response))
+                metadata = notify.call_args_list[0][0][2]['target']['metadata']
+                self.assertEqual('0', metadata['policy_idx'])
+                self.assertEqual('replicated', metadata['policy_name'])
+                self.assertEqual('replication', metadata['policy_type'])
 
     def test_bogus_path(self):
         app = swift.Swift(FakeApp(), {})
