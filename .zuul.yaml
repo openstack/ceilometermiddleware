@@ -9,6 +9,7 @@
       - ^\.pre-commit-config\.yaml$
       - ^test-requirements\.txt$
       - ^setup.cfg$
+      - ^tox\.ini$
       - ^doc/.*$
       - ^.*\.rst$
       - ^releasenotes/.*$
