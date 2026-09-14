@@ -60,6 +60,7 @@ select = [
     "F",
     "G",
     "LOG",
+    "S",
     "UP",
     "W",
 ]
@@ -70,6 +71,9 @@ ignore = [
     # UP032 f-string — defer migration to a later pass
     "UP032",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"ceilometermiddleware/tests/*" = ["S"]
 
 [tool.ruff.lint.mccabe]
 # Flag errors (`C901`) whenever the complexity level exceeds 15.
